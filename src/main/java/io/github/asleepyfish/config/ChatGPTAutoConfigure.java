@@ -1,7 +1,7 @@
 package io.github.asleepyfish.config;
 
 import com.theokanning.openai.OpenAiService;
-import io.github.asleepyfish.service.OpenAiUtils;
+import io.github.asleepyfish.util.OpenAiUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,18 +17,17 @@ import java.time.Duration;
  */
 @Configuration
 @EnableConfigurationProperties(ChatGPTProperties.class)
-@ConditionalOnProperty(prefix = "chatgpt", value = "enable", havingValue = "true")
 public class ChatGPTAutoConfigure {
     @Autowired
     private ChatGPTProperties properties;
 
     @Bean
     public OpenAiService openAiService() {
-        return new OpenAiService(properties.getToken(), Duration.ofSeconds(properties.getTimeout()));
+        return new OpenAiService(properties.getToken(), Duration.ZERO);
     }
 
     @Bean
-    public OpenAiUtils openAiUtils(OpenAiService openAiService) {
-        return new OpenAiUtils(openAiService);
+    public OpenAiUtils openAiUtils(OpenAiService openAiService, ChatGPTProperties properties) {
+        return new OpenAiUtils(openAiService, properties);
     }
 }

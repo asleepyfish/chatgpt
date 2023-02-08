@@ -17,8 +17,8 @@ public class ChatGPTProperties {
     private String token;
 
     /**
-     * Timeout time (unit: s)
-     * http read timeout in seconds, 0 means no timeout
+     * The name of the model to use.
+     * Required if specifying a fine tuned model or if using the new v1/completions endpoint.
      */
-    private Long timeout;
+    private String model = "text-davinci-003";
 }
