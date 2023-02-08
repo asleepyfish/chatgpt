@@ -1,6 +1,7 @@
 package io.github.asleepyfish.config;
 
 import com.theokanning.openai.OpenAiService;
+import io.github.asleepyfish.service.OpenAiUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,5 +25,10 @@ public class ChatGPTAutoConfigure {
     @Bean
     public OpenAiService openAiService() {
         return new OpenAiService(properties.getToken(), Duration.ofSeconds(properties.getTimeout()));
+    }
+
+    @Bean
+    public OpenAiUtils openAiUtils(OpenAiService openAiService) {
+        return new OpenAiUtils(openAiService);
     }
 }
