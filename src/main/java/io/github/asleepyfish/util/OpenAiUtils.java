@@ -52,9 +52,11 @@ public class OpenAiUtils {
     }
 
     public static List<String> createCompletion(CompletionRequest completionRequest) {
-        List<CompletionChoice> choices = openAiService.createCompletion(completionRequest).getChoices();
-        if (CollectionUtils.isEmpty(choices)) {
-            throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, completionRequest.getPrompt());
+        List<CompletionChoice> choices;
+        try {
+            choices = openAiService.createCompletion(completionRequest).getChoices();
+        } catch (Exception e) {
+            throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, completionRequest.getPrompt(), e.getMessage());
         }
         List<String> results = new ArrayList<>();
         choices.forEach(choice -> {

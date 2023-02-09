@@ -9,7 +9,7 @@ public enum ChatGPTErrorEnum {
     /**
      * FAILED_TO_GENERATE_ANSWER
      */
-    FAILED_TO_GENERATE_ANSWER("10001", "generate answer error, the prompt is %s"),
+    FAILED_TO_GENERATE_ANSWER("10001", "generate answer error, the prompt is %s, reason is %s."),
 
     /**
      * MODEL_SELECTION_ERROR
