@@ -21,4 +21,9 @@ public class ChatGPTProperties {
      * Required if specifying a fine tuned model or if using the new v1/completions endpoint.
      */
     private String model = "text-davinci-003";
+
+    /**
+     * Timeout retries
+     */
+    private Integer retries = 5;
 }

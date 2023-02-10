@@ -8,10 +8,12 @@ import io.github.asleepyfish.enums.ChatGPTErrorEnum;
 import io.github.asleepyfish.enums.FinishReasonEnum;
 import io.github.asleepyfish.enums.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
-import org.springframework.util.CollectionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * @Author: asleepyfish
@@ -19,9 +21,13 @@ import java.util.List;
  * @Description: provide external call-related interfaces
  */
 public class OpenAiUtils {
+    private static final Log LOG = LogFactory.getLog(OpenAiUtils.class);
+
     private static OpenAiService openAiService;
 
     private static ChatGPTProperties chatGPTProperties;
+
+    private static final Random RANDOM = new Random();
 
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
@@ -52,11 +58,23 @@ public class OpenAiUtils {
     }
 
     public static List<String> createCompletion(CompletionRequest completionRequest) {
-        List<CompletionChoice> choices;
-        try {
-            choices = openAiService.createCompletion(completionRequest).getChoices();
-        } catch (Exception e) {
-            throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, completionRequest.getPrompt(), e.getMessage());
+        List<CompletionChoice> choices = new ArrayList<>();
+
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                // avoid frequently request, random sleep 0.5s~1s
+                if (i > 0) {
+                    Thread.sleep((long) (500 + RANDOM.nextInt(500)));
+                }
+                choices = openAiService.createCompletion(completionRequest).getChoices();
+                // if the last line code is correct, we can simply break the circle
+                break;
+            } catch (Exception e) {
+                LOG.error("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, e.getMessage());
+                }
+            }
         }
         List<String> results = new ArrayList<>();
         choices.forEach(choice -> {
