@@ -14,7 +14,12 @@ public enum ChatGPTErrorEnum {
     /**
      * MODEL_SELECTION_ERROR
      */
-    MODEL_SELECTION_ERROR("10002", "there is no such model!");
+    MODEL_SELECTION_ERROR("10002", "there is no such model!"),
+
+    /**
+     * FAILED_TO_GENERATE_IMAGE
+     */
+    FAILED_TO_GENERATE_IMAGE("10003", "generate image error, reason is %s.");
     private final String errorCode;
     private final String errorMessage;
 

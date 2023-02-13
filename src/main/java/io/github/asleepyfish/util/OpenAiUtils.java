@@ -3,9 +3,12 @@ package io.github.asleepyfish.util;
 import com.theokanning.openai.OpenAiService;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.image.Image;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.enums.ChatGPTErrorEnum;
 import io.github.asleepyfish.enums.FinishReasonEnum;
+import io.github.asleepyfish.enums.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
 import org.apache.commons.logging.Log;
@@ -14,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * @Author: asleepyfish
@@ -64,7 +68,7 @@ public class OpenAiUtils {
             try {
                 // avoid frequently request, random sleep 0.5s~1s
                 if (i > 0) {
-                    Thread.sleep((long) (500 + RANDOM.nextInt(500)));
+                    Thread.sleep(500 + RANDOM.nextInt(500));
                 }
                 choices = openAiService.createCompletion(completionRequest).getChoices();
                 // if the last line code is correct, we can simply break the circle
@@ -85,5 +89,37 @@ public class OpenAiUtils {
             results.add(text);
         });
         return results;
+    }
+
+    public static List<String> createImage(String prompt) {
+        return createImage(prompt, "DEFAULT USER");
+    }
+
+    public static List<String> createImage(String prompt, String user) {
+        return createImage(CreateImageRequest.builder()
+                .prompt(prompt)
+                .user(user)
+                .build());
+    }
+
+    public static List<String> createImage(CreateImageRequest createImageRequest) {
+        List<Image> imageList = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    Thread.sleep(500 + RANDOM.nextInt(500));
+                }
+                imageList = openAiService.createImage(createImageRequest).getData();
+                break;
+            } catch (Exception e) {
+                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
+                }
+            }
+        }
+        return ImageResponseFormatEnum.URL.getResponseFormat().equals(createImageRequest.getResponseFormat()) ?
+                imageList.stream().map(Image::getUrl).collect(Collectors.toList()) :
+                imageList.stream().map(Image::getB64Json).collect(Collectors.toList());
     }
 }

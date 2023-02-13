@@ -25,5 +25,5 @@ public class ChatGPTProperties {
     /**
      * Timeout retries
      */
-    private Integer retries = 5;
+    private int retries = 5;
 }
