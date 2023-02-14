@@ -118,7 +118,9 @@ public class OpenAiUtils {
                 }
             }
         }
-        return ImageResponseFormatEnum.URL.getResponseFormat().equals(createImageRequest.getResponseFormat()) ?
+        String responseFormat = createImageRequest.getResponseFormat();
+        // default response_format is url
+        return ImageResponseFormatEnum.URL.getResponseFormat().equals(responseFormat) || responseFormat == null ?
                 imageList.stream().map(Image::getUrl).collect(Collectors.toList()) :
                 imageList.stream().map(Image::getB64Json).collect(Collectors.toList());
     }
