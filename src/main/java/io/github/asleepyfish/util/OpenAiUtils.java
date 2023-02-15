@@ -47,7 +47,7 @@ public class OpenAiUtils {
     }
 
     public static List<String> createCompletion(String prompt, String user, String model) {
-        return createCompletion(prompt, user, model, 0.9D, 1D);
+        return createCompletion(prompt, user, model, 0D, 1D);
     }
 
     public static List<String> createCompletion(String prompt, String user, String model, Double temperature, Double topP) {
