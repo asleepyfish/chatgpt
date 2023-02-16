@@ -17,16 +17,19 @@ public class ChatGPTException extends RuntimeException {
     }
 
     public ChatGPTException(ChatGPTErrorEnum chatGPTErrorEnum) {
+        super(chatGPTErrorEnum.getErrorMessage());
         this.errorCode = chatGPTErrorEnum.getErrorCode();
         this.errorMessage = chatGPTErrorEnum.getErrorMessage();
     }
 
     public ChatGPTException(ChatGPTErrorEnum chatGPTErrorEnum, Object... message) {
+        super(String.format(chatGPTErrorEnum.getErrorMessage(), message));
         this.errorCode = chatGPTErrorEnum.getErrorCode();
         this.errorMessage = String.format(chatGPTErrorEnum.getErrorMessage(), message);
     }
 
     public ChatGPTException(String errorCode, String errorMessage) {
+        super(errorMessage);
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }

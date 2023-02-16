@@ -6,7 +6,7 @@
 
     <groupId>io.github.asleepyfish</groupId>
     <artifactId>chatgpt</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <url>https://github.com/asleepyfish/chatgpt</url>
     <name>chatgpt</name>
@@ -60,6 +60,10 @@
             <groupId>com.theokanning.openai-gpt3-java</groupId>
             <artifactId>client</artifactId>
             <version>${openai.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
     </dependencies>
 

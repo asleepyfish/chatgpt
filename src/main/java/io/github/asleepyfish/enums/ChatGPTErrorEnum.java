@@ -19,7 +19,17 @@ public enum ChatGPTErrorEnum {
     /**
      * FAILED_TO_GENERATE_IMAGE
      */
-    FAILED_TO_GENERATE_IMAGE("10003", "generate image error, reason is %s.");
+    FAILED_TO_GENERATE_IMAGE("10003", "generate image error, reason is %s."),
+
+    /**
+     * ERROR_RESPONSE_FORMAT
+     */
+    ERROR_RESPONSE_FORMAT("10004", "please check if the response_format is b64_json!"),
+
+    /**
+     * DOWNLOAD_IMAGE_ERROR
+     */
+    DOWNLOAD_IMAGE_ERROR("10005", "failed to download image!");
     private final String errorCode;
     private final String errorMessage;
 

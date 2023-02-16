@@ -6,18 +6,24 @@ import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
 import io.github.asleepyfish.config.ChatGPTProperties;
-import io.github.asleepyfish.enums.ChatGPTErrorEnum;
-import io.github.asleepyfish.enums.FinishReasonEnum;
-import io.github.asleepyfish.enums.ImageResponseFormatEnum;
-import io.github.asleepyfish.enums.ModelEnum;
+import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @Author: asleepyfish
@@ -120,8 +126,65 @@ public class OpenAiUtils {
         }
         String responseFormat = createImageRequest.getResponseFormat();
         // default response_format is url
-        return ImageResponseFormatEnum.URL.getResponseFormat().equals(responseFormat) || responseFormat == null ?
-                imageList.stream().map(Image::getUrl).collect(Collectors.toList()) :
-                imageList.stream().map(Image::getB64Json).collect(Collectors.toList());
+        return imageList.stream().map(image -> responseFormat == null ||
+                ImageResponseFormatEnum.URL.getResponseFormat().equals(responseFormat) ?
+                image.getUrl() : image.getB64Json()).collect(Collectors.toList());
+    }
+
+    public static void downloadImage(String prompt, HttpServletResponse response) {
+        downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), response);
+    }
+
+    public static void downloadImage(String prompt, Integer n, HttpServletResponse response) {
+        downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), response);
+    }
+
+    public static void downloadImage(String prompt, String size, HttpServletResponse response) {
+        downloadImage(prompt, 1, size, response);
+    }
+
+    public static void downloadImage(String prompt, Integer n, String size, HttpServletResponse response) {
+        downloadImage(CreateImageRequest.builder()
+                .prompt(prompt)
+                .n(n)
+                .size(size)
+                .user("DEFAULT USER").build(), response);
+    }
+
+    public static void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {
+        createImageRequest.setResponseFormat(ImageResponseFormatEnum.B64_JSON.getResponseFormat());
+        if (!ImageResponseFormatEnum.B64_JSON.getResponseFormat().equals(createImageRequest.getResponseFormat())) {
+            throw new ChatGPTException(ChatGPTErrorEnum.ERROR_RESPONSE_FORMAT);
+        }
+        List<String> imageList = createImage(createImageRequest);
+        try (OutputStream os = response.getOutputStream()) {
+            if (imageList.size() == 1) {
+                response.setContentType("image/png");
+                response.setHeader("Content-Disposition", "attachment; filename=generated.png");
+                BufferedImage bufferedImage = getImageFromBase64(imageList.get(0));
+                ImageIO.write(bufferedImage, "png", os);
+            } else {
+                response.setContentType("application/zip");
+                response.setHeader("Content-Disposition", "attachment; filename=images.zip");
+                try (ZipOutputStream zipOut = new ZipOutputStream(os)) {
+                    for (int i = 0; i < imageList.size(); i++) {
+                        BufferedImage bufferedImage = getImageFromBase64(imageList.get(i));
+                        ZipEntry zipEntry = new ZipEntry("image" + (i + 1) + ".png");
+                        zipOut.putNextEntry(zipEntry);
+                        ImageIO.write(bufferedImage, "png", zipOut);
+                        zipOut.closeEntry();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new ChatGPTException(ChatGPTErrorEnum.DOWNLOAD_IMAGE_ERROR);
+        }
+    }
+
+    private static BufferedImage getImageFromBase64(String base64) throws IOException {
+        byte[] imageBytes = Base64.getDecoder().decode(base64.getBytes());
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
+            return ImageIO.read(bis);
+        }
     }
 }
