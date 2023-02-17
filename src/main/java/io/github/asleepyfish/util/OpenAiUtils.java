@@ -82,6 +82,7 @@ public class OpenAiUtils {
             } catch (Exception e) {
                 LOG.error("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, e.getMessage());
                 }
             }
@@ -120,6 +121,7 @@ public class OpenAiUtils {
             } catch (Exception e) {
                 LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
                 }
             }
