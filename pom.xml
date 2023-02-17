@@ -84,10 +84,9 @@
     </scm>
 
     <licenses>
-        <!-- Apache许可证 -->
         <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <name>MIT License</name>
+            <url>https://github.com/asleepyfish/chatgpt/blob/master/LICENSE</url>
         </license>
     </licenses>
 
