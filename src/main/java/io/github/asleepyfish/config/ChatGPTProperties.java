@@ -26,4 +26,14 @@ public class ChatGPTProperties {
      * Timeout retries
      */
     private int retries = 5;
+
+    /**
+     * proxyHost
+     */
+    private String proxyHost;
+
+    /**
+     * proxyPort
+     */
+    private int proxyPort;
 }

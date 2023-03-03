@@ -6,7 +6,7 @@
 
     <groupId>io.github.asleepyfish</groupId>
     <artifactId>chatgpt</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 
     <url>https://github.com/asleepyfish/chatgpt</url>
     <name>chatgpt</name>
@@ -20,7 +20,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>2.7.8</spring-boot.version>
         <lombok.version>1.18.24</lombok.version>
-        <openai.version>0.9.0</openai.version>
+        <openai.version>0.11.0</openai.version>
+        <jackson.version>2.13.4.2</jackson.version>
     </properties>
 
     <dependencyManagement>
@@ -53,17 +54,17 @@
         </dependency>
         <dependency>
             <groupId>com.theokanning.openai-gpt3-java</groupId>
-            <artifactId>api</artifactId>
-            <version>${openai.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.theokanning.openai-gpt3-java</groupId>
-            <artifactId>client</artifactId>
+            <artifactId>service</artifactId>
             <version>${openai.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 

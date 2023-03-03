@@ -1,10 +1,13 @@
 package io.github.asleepyfish.util;
 
-import com.theokanning.openai.OpenAiService;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.completion.chat.ChatCompletionChoice;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
+import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
@@ -17,10 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -42,6 +42,59 @@ public class OpenAiUtils {
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
         OpenAiUtils.chatGPTProperties = chatGPTProperties;
+    }
+
+    public static List<String> createChatCompletion(String content) {
+        return createChatCompletion(content, "DEFAULT USER");
+    }
+
+    public static List<String> createChatCompletion(String content, String user) {
+        return createChatCompletion(content, user, chatGPTProperties.getModel());
+    }
+
+    public static List<String> createChatCompletion(String content, String user, String model) {
+        return createChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 0D, 1D);
+    }
+
+    public static List<String> createChatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
+        return createChatCompletion(ChatCompletionRequest.builder()
+                .model(model)
+                .messages(Collections.singletonList(new ChatMessage(role, content)))
+                .user(user)
+                .temperature(temperature)
+                .topP(topP)
+                .maxTokens(ModelEnum.getMaxTokens(model))
+                .build());
+    }
+
+    public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
+        List<ChatCompletionChoice> choices = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                // avoid frequently request, random sleep 0.5s~1s
+                if (i > 0) {
+                    Thread.sleep(500 + RANDOM.nextInt(500));
+                }
+                choices = openAiService.createChatCompletion(chatCompletionRequest).getChoices();
+                // if the last line code is correct, we can simply break the circle
+                break;
+            } catch (Exception e) {
+                LOG.error("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, e.getMessage());
+                }
+            }
+        }
+        List<String> results = new ArrayList<>();
+        choices.forEach(choice -> {
+            String text = choice.getMessage().getContent();
+            if (FinishReasonEnum.LENGTH.getMessage().equals(choice.getFinishReason())) {
+                text = text + System.lineSeparator() + "The answer is too long, Please disassemble the above problems into several minor problems.";
+            }
+            results.add(text);
+        });
+        return results;
     }
 
     public static List<String> createCompletion(String prompt) {
