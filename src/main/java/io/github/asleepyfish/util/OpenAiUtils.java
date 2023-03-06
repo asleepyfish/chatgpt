@@ -49,7 +49,7 @@ public class OpenAiUtils {
     }
 
     public static List<String> createChatCompletion(String content, String user) {
-        return createChatCompletion(content, user, chatGPTProperties.getModel());
+        return createChatCompletion(content, user, chatGPTProperties.getChatModel());
     }
 
     public static List<String> createChatCompletion(String content, String user, String model) {
@@ -63,7 +63,6 @@ public class OpenAiUtils {
                 .user(user)
                 .temperature(temperature)
                 .topP(topP)
-                .maxTokens(ModelEnum.getMaxTokens(model))
                 .build());
     }
 

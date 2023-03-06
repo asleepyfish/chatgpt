@@ -23,6 +23,11 @@ public class ChatGPTProperties {
     private String model = "text-davinci-003";
 
     /**
+     * chatModel which use by createChatCompletion
+     */
+    private String chatModel = "gpt-3.5-turbo";
+
+    /**
      * Timeout retries
      */
     private int retries = 5;
