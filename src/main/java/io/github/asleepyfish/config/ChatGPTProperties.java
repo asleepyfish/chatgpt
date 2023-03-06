@@ -41,4 +41,9 @@ public class ChatGPTProperties {
      * proxyPort
      */
     private int proxyPort;
+
+    /**
+     * sessionExpirationTime
+     */
+    private int sessionExpirationTime = 20;
 }

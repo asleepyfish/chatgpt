@@ -1,5 +1,7 @@
 package io.github.asleepyfish.util;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
@@ -13,6 +15,7 @@ import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.util.CollectionUtils;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -39,9 +43,14 @@ public class OpenAiUtils {
 
     private static final Random RANDOM = new Random();
 
+    private static Cache<Object, Object> cache;
+
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
         OpenAiUtils.chatGPTProperties = chatGPTProperties;
+        cache = CacheBuilder.newBuilder()
+                .expireAfterWrite(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES)
+                .build();
     }
 
     public static List<String> createChatCompletion(String content) {
@@ -67,6 +76,13 @@ public class OpenAiUtils {
     }
 
     public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
+        String user = chatCompletionRequest.getUser();
+        List<ChatMessage> contextInfo = (List<ChatMessage>) cache.getIfPresent(user);
+        if (CollectionUtils.isEmpty(contextInfo)) {
+            cache.put(user, new ArrayList<>());
+        }
+        contextInfo.addAll(chatCompletionRequest.getMessages());
+        chatCompletionRequest.setMessages(contextInfo);
         List<ChatCompletionChoice> choices = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
@@ -96,18 +112,28 @@ public class OpenAiUtils {
         return results;
     }
 
+    /**
+     * please use ChatCompletion instead
+     *
+     * @param prompt prompt
+     * @return List<String>
+     */
+    @Deprecated
     public static List<String> createCompletion(String prompt) {
         return createCompletion(prompt, "DEFAULT USER");
     }
 
+    @Deprecated
     public static List<String> createCompletion(String prompt, String user) {
         return createCompletion(prompt, user, chatGPTProperties.getModel());
     }
 
+    @Deprecated
     public static List<String> createCompletion(String prompt, String user, String model) {
         return createCompletion(prompt, user, model, 0D, 1D);
     }
 
+    @Deprecated
     public static List<String> createCompletion(String prompt, String user, String model, Double temperature, Double topP) {
         return createCompletion(CompletionRequest.builder()
                 .model(model)
@@ -119,6 +145,7 @@ public class OpenAiUtils {
                 .build());
     }
 
+    @Deprecated
     public static List<String> createCompletion(CompletionRequest completionRequest) {
         List<CompletionChoice> choices = new ArrayList<>();
 
