@@ -86,6 +86,7 @@ public class OpenAiUtils {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+        assert contextInfo != null;
         contextInfo.addAll(chatCompletionRequest.getMessages());
         cache.put(user, contextInfo);
         chatCompletionRequest.setMessages(contextInfo);

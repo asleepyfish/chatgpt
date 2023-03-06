@@ -1,10 +1,11 @@
 <p align="center">
 <h1 align="center">📦 ChatGPT</h1>
-<div align="center">a small plugin that calls chatgpt </div>
+<div align="center">Realize continuous dialogue Chat GPT plug-in</div>
 </p>
 
 [![English badge](https://img.shields.io/badge/%E8%8B%B1%E6%96%87-English-blue)](./README_en.md)
 [![简体中文 badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-Simplified%20Chinese-blue)](./README.md)
+
 
 #1. create Completion
 Provides the tool class `OpenAiUtils`, which provides related methods for calling.
