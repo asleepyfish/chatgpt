@@ -45,5 +45,5 @@ public class ChatGPTProperties {
     /**
      * sessionExpirationTime
      */
-    private int sessionExpirationTime = 20;
+    private Integer sessionExpirationTime;
 }

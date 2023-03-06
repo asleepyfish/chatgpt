@@ -15,7 +15,6 @@ import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.util.CollectionUtils;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -43,14 +43,17 @@ public class OpenAiUtils {
 
     private static final Random RANDOM = new Random();
 
-    private static Cache<Object, Object> cache;
+    private static Cache<String, List<ChatMessage>> cache;
 
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
         OpenAiUtils.chatGPTProperties = chatGPTProperties;
-        cache = CacheBuilder.newBuilder()
-                .expireAfterWrite(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES)
-                .build();
+        cache = chatGPTProperties.getSessionExpirationTime() == null ?
+                CacheBuilder.newBuilder()
+                        .build() :
+                CacheBuilder.newBuilder()
+                        .expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES)
+                        .build();
     }
 
     public static List<String> createChatCompletion(String content) {
@@ -77,18 +80,21 @@ public class OpenAiUtils {
 
     public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
         String user = chatCompletionRequest.getUser();
-        List<ChatMessage> contextInfo = (List<ChatMessage>) cache.getIfPresent(user);
-        if (CollectionUtils.isEmpty(contextInfo)) {
-            cache.put(user, new ArrayList<>());
+        List<ChatMessage> contextInfo = null;
+        try {
+            contextInfo = cache.get(user, ArrayList::new);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
         contextInfo.addAll(chatCompletionRequest.getMessages());
+        cache.put(user, contextInfo);
         chatCompletionRequest.setMessages(contextInfo);
         List<ChatCompletionChoice> choices = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 // avoid frequently request, random sleep 0.5s~1s
                 if (i > 0) {
-                    Thread.sleep(500 + RANDOM.nextInt(500));
+                    randomSleep();
                 }
                 choices = openAiService.createChatCompletion(chatCompletionRequest).getChoices();
                 // if the last line code is correct, we can simply break the circle
@@ -108,8 +114,19 @@ public class OpenAiUtils {
                 text = text + System.lineSeparator() + "The answer is too long, Please disassemble the above problems into several minor problems.";
             }
             results.add(text);
+            try {
+                List<ChatMessage> chatMessages = cache.get(user, ArrayList::new);
+                chatMessages.add(choice.getMessage());
+                cache.put(user, chatMessages);
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         });
         return results;
+    }
+
+    private static void randomSleep() throws InterruptedException {
+        Thread.sleep(500 + RANDOM.nextInt(500));
     }
 
     /**
