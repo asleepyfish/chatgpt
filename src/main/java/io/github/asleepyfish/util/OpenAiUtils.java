@@ -171,7 +171,7 @@ public class OpenAiUtils {
             try {
                 // avoid frequently request, random sleep 0.5s~1s
                 if (i > 0) {
-                    Thread.sleep(500 + RANDOM.nextInt(500));
+                    randomSleep();
                 }
                 choices = openAiService.createCompletion(completionRequest).getChoices();
                 // if the last line code is correct, we can simply break the circle
@@ -211,7 +211,7 @@ public class OpenAiUtils {
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 if (i > 0) {
-                    Thread.sleep(500 + RANDOM.nextInt(500));
+                    randomSleep();
                 }
                 imageList = openAiService.createImage(createImageRequest).getData();
                 break;
