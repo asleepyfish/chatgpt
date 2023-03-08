@@ -14,18 +14,20 @@
         <dependency>
             <groupId>io.github.asleepyfish</groupId>
             <artifactId>chatgpt</artifactId>
-            <version>1.0.7</version>
+            <version>1.0.8</version>
         </dependency>
 ```
 ## 1.2 配置application.yml文件
 在`application.yml`文件中配置chatgpt相关参数（Optional为可选参数）
 
+**注：大陆用户需要配置proxy-host和proxy-port来进行代理才能访问OpenAI服务**
+
 
 | 参数                               | 解释                                                         |
 | ---------------------------------- | ------------------------------------------------------------ |
 | token                              | 申请的API KEYS                                               |
-| proxy-host                         | 代理的ip                                                     |
-| proxy-port                         | 代理的端口                                                   |
+| proxy-host (Optional)              | 代理的ip                                                     |
+| proxy-port (Optional)              | 代理的端口                                                   |
 | model (Optional)                   | model可填可不填，默认即text-davinci-003                      |
 | chat-model (Optional)              | 可填可不填，默认即gpt-3.5-turbo （ChatGPT当前最强模型，生成回答使用的就是这个模型） |
 | retries (Optional)                 | 指的是当chatgpt第一次请求回答失败时，重新请求的次数（增加该参数的原因是因为大量访问的原因，在某一个时刻，chatgpt服务将处于无法访问的情况，不填的默认值为5） |
@@ -37,9 +39,9 @@ chatgpt:
   token: sk-xxxxxxxxxxxxxxx
   proxy-host: 127.0.0.1
   proxy-port: xxxx
-  session-expiration-time: 30
+  session-expiration-time: 10
 ```
-**_其中token、proxy-host、proxy-port是必填的（某些你懂的原因）_**
+**_其中token必填、大陆用户proxy-host、proxy-port也是必填的（某些你懂的原因）_**
 
 上面的session-expiration-time参数很重要，是用来表示这个会话在多久不访问后被销毁，从而实现联系上下文的连续对话。
 

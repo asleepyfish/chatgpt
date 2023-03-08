@@ -1,5 +1,6 @@
 package io.github.asleepyfish.config;
 
+import com.google.common.base.Strings;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.service.OpenAiProxyService;
 import io.github.asleepyfish.util.OpenAiUtils;
@@ -23,7 +24,8 @@ public class ChatGPTAutoConfigure {
 
     @Bean
     public OpenAiService openAiService() {
-        return new OpenAiProxyService(properties.getToken(), Duration.ZERO, properties.getProxyHost(), properties.getProxyPort());
+        return Strings.isNullOrEmpty(properties.getProxyHost()) ? new OpenAiService(properties.getToken(), Duration.ZERO) :
+                new OpenAiProxyService(properties.getToken(), Duration.ZERO, properties.getProxyHost(), properties.getProxyPort());
     }
 
     @Bean
