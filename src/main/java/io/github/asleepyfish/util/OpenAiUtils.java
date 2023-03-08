@@ -65,7 +65,7 @@ public class OpenAiUtils {
     }
 
     public static List<String> createChatCompletion(String content, String user, String model) {
-        return createChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 0D, 1D);
+        return createChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D);
     }
 
     public static List<String> createChatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
