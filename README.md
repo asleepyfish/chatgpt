@@ -10,12 +10,14 @@
 # 1. 配置阶段
 ## 1.1 依赖引入
 `pom.xml`中引入依赖
+- Latest Version: ![Maven Central](https://img.shields.io/maven-central/v/io.github.asleepyfish/chatgpt?color=blue)
+- Maven:
 ```xml
-        <dependency>
-            <groupId>io.github.asleepyfish</groupId>
-            <artifactId>chatgpt</artifactId>
-            <version>1.0.8</version>
-        </dependency>
+<dependency>
+    <groupId>io.github.asleepyfish</groupId>
+    <artifactId>chatgpt</artifactId>
+    <version>Latest Version</version>
+</dependency>
 ```
 ## 1.2 配置application.yml文件
 在`application.yml`文件中配置chatgpt相关参数（Optional为可选参数）
