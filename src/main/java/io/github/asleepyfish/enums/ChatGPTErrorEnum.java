@@ -30,6 +30,11 @@ public enum ChatGPTErrorEnum {
      * DOWNLOAD_IMAGE_ERROR
      */
     DOWNLOAD_IMAGE_ERROR("10005", "failed to download image!");
+
+    /**
+     *
+     */
+
     private final String errorCode;
     private final String errorMessage;
 

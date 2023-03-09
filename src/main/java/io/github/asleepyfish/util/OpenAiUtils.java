@@ -43,7 +43,7 @@ public class OpenAiUtils {
 
     private static final Random RANDOM = new Random();
 
-    private static Cache<String, List<ChatMessage>> cache;
+    private static Cache<String, LinkedList<ChatMessage>> cache;
 
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
@@ -80,9 +80,9 @@ public class OpenAiUtils {
 
     public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
         String user = chatCompletionRequest.getUser();
-        List<ChatMessage> contextInfo = null;
+        LinkedList<ChatMessage> contextInfo = null;
         try {
-            contextInfo = cache.get(user, ArrayList::new);
+            contextInfo = cache.get(user, LinkedList::new);
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
@@ -101,10 +101,16 @@ public class OpenAiUtils {
                 // if the last line code is correct, we can simply break the circle
                 break;
             } catch (Exception e) {
-                LOG.error("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                String message = e.getMessage();
+                boolean overload = checkTokenUsage(message);
+                if (overload) {
+                    Objects.requireNonNull(cache.getIfPresent(user)).removeFirst();
+                    chatCompletionRequest.getMessages().remove(0);
+                }
+                LOG.error("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
-                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, e.getMessage());
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, message);
                 }
             }
         }
@@ -116,7 +122,7 @@ public class OpenAiUtils {
             }
             results.add(text);
             try {
-                List<ChatMessage> chatMessages = cache.get(user, ArrayList::new);
+                LinkedList<ChatMessage> chatMessages = cache.get(user, LinkedList::new);
                 chatMessages.add(choice.getMessage());
                 cache.put(user, chatMessages);
             } catch (ExecutionException e) {
@@ -128,6 +134,10 @@ public class OpenAiUtils {
 
     private static void randomSleep() throws InterruptedException {
         Thread.sleep(500 + RANDOM.nextInt(500));
+    }
+
+    private static boolean checkTokenUsage(String message) {
+        return message.contains("This model's maximum context length is 4096 tokens.");
     }
 
     /**
@@ -278,6 +288,10 @@ public class OpenAiUtils {
         } catch (Exception e) {
             throw new ChatGPTException(ChatGPTErrorEnum.DOWNLOAD_IMAGE_ERROR);
         }
+    }
+
+    public static void forceClearCache(String cacheName) {
+        cache.invalidate(cacheName);
     }
 
     private static BufferedImage getImageFromBase64(String base64) throws IOException {
