@@ -80,13 +80,12 @@ public class OpenAiUtils {
 
     public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
         String user = chatCompletionRequest.getUser();
-        LinkedList<ChatMessage> contextInfo = null;
+        LinkedList<ChatMessage> contextInfo = new LinkedList<>();
         try {
             contextInfo = cache.get(user, LinkedList::new);
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        assert contextInfo != null;
         contextInfo.addAll(chatCompletionRequest.getMessages());
         cache.put(user, contextInfo);
         chatCompletionRequest.setMessages(contextInfo);
@@ -104,8 +103,11 @@ public class OpenAiUtils {
                 String message = e.getMessage();
                 boolean overload = checkTokenUsage(message);
                 if (overload) {
-                    Objects.requireNonNull(cache.getIfPresent(user)).removeFirst();
-                    chatCompletionRequest.getMessages().remove(0);
+                    int size = Objects.requireNonNull(cache.getIfPresent(user)).size();
+                    for (int j = 0; j < size / 2; j++) {
+                        Objects.requireNonNull(cache.getIfPresent(user)).removeFirst();
+                    }
+                    chatCompletionRequest.setMessages(cache.getIfPresent(user));
                 }
                 LOG.error("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
@@ -115,20 +117,21 @@ public class OpenAiUtils {
             }
         }
         List<String> results = new ArrayList<>();
-        choices.forEach(choice -> {
+        LinkedList<ChatMessage> chatMessages = new LinkedList<>();
+        try {
+            chatMessages = cache.get(user, LinkedList::new);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        for (ChatCompletionChoice choice : choices) {
             String text = choice.getMessage().getContent();
-            if (FinishReasonEnum.LENGTH.getMessage().equals(choice.getFinishReason())) {
-                text = text + System.lineSeparator() + "The answer is too long, Please disassemble the above problems into several minor problems.";
-            }
             results.add(text);
-            try {
-                LinkedList<ChatMessage> chatMessages = cache.get(user, LinkedList::new);
-                chatMessages.add(choice.getMessage());
-                cache.put(user, chatMessages);
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            if (FinishReasonEnum.LENGTH.getMessage().equals(choice.getFinishReason())) {
+                results.add("答案过长，请输入继续~");
             }
-        });
+            chatMessages.add(choice.getMessage());
+        }
+        cache.put(user, chatMessages);
         return results;
     }
 
