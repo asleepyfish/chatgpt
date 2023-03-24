@@ -140,7 +140,7 @@ public class OpenAiUtils {
     }
 
     private static boolean checkTokenUsage(String message) {
-        return message.contains("This model's maximum context length is 4096 tokens.");
+        return message.contains("This model's maximum context length is");
     }
 
     /**
