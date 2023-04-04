@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
+import com.theokanning.openai.completion.chat.ChatCompletionChunk;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.image.CreateImageRequest;
@@ -54,6 +55,67 @@ public class OpenAiUtils {
                 CacheBuilder.newBuilder()
                         .expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES)
                         .build();
+    }
+
+
+    public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest) {
+        chatCompletionRequest.setStream(true);
+        String user = chatCompletionRequest.getUser();
+        LinkedList<ChatMessage> contextInfo = new LinkedList<>();
+        try {
+            contextInfo = cache.get(user, LinkedList::new);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        contextInfo.addAll(chatCompletionRequest.getMessages());
+        cache.put(user, contextInfo);
+        chatCompletionRequest.setMessages(contextInfo);
+        List<ChatCompletionChunk> chunks = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                // avoid frequently request, random sleep 0.5s~1s
+                if (i > 0) {
+                    randomSleep();
+                }
+                openAiService.streamChatCompletion(chatCompletionRequest).blockingForEach(chunks::add);
+                // if the last line code is correct, we can simply break the circle
+                break;
+            } catch (Exception e) {
+                String message = e.getMessage();
+                boolean overload = checkTokenUsage(message);
+                if (overload) {
+                    int size = Objects.requireNonNull(cache.getIfPresent(user)).size();
+                    for (int j = 0; j < size / 2; j++) {
+                        Objects.requireNonNull(cache.getIfPresent(user)).removeFirst();
+                    }
+                    chatCompletionRequest.setMessages(cache.getIfPresent(user));
+                }
+                LOG.error("answer failed " + (i + 1) + " times, the error message is: " + message);
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, message);
+                }
+            }
+        }
+        LinkedList<ChatMessage> chatMessages = new LinkedList<>();
+        try {
+            chatMessages = cache.get(user, LinkedList::new);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setRole(RoleEnum.ASSISTANT.getRoleName());
+        StringBuilder content = new StringBuilder();
+        for (ChatCompletionChunk chunk : chunks) {
+            for (ChatCompletionChoice choice : chunk.getChoices()) {
+                if (choice.getMessage().getContent() != null) {
+                    content.append(choice.getMessage().getContent());
+                }
+            }
+        }
+        chatMessage.setContent(content.toString());
+        chatMessages.add(chatMessage);
+        cache.put(user, chatMessages);
     }
 
     public static List<String> createChatCompletion(String content) {
