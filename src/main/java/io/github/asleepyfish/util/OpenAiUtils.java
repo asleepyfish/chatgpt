@@ -57,9 +57,32 @@ public class OpenAiUtils {
                         .build();
     }
 
+    public static void createStreamChatCompletion(String content) {
+        createStreamChatCompletion(content, "DEFAULT USER");
+    }
+
+    public static void createStreamChatCompletion(String content, String user) {
+        createStreamChatCompletion(content, user, chatGPTProperties.getChatModel());
+    }
+
+    public static void createStreamChatCompletion(String content, String user, String model) {
+        createStreamChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D);
+    }
+
+    public static void createStreamChatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
+        createStreamChatCompletion(ChatCompletionRequest.builder()
+                .model(model)
+                .messages(Collections.singletonList(new ChatMessage(role, content)))
+                .user(user)
+                .temperature(temperature)
+                .topP(topP)
+                .stream(true)
+                .build());
+    }
 
     public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest) {
         chatCompletionRequest.setStream(true);
+        chatCompletionRequest.setN(1);
         String user = chatCompletionRequest.getUser();
         LinkedList<ChatMessage> contextInfo = new LinkedList<>();
         try {
@@ -68,7 +91,6 @@ public class OpenAiUtils {
             e.printStackTrace();
         }
         contextInfo.addAll(chatCompletionRequest.getMessages());
-        cache.put(user, contextInfo);
         chatCompletionRequest.setMessages(contextInfo);
         List<ChatCompletionChunk> chunks = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -77,7 +99,12 @@ public class OpenAiUtils {
                 if (i > 0) {
                     randomSleep();
                 }
-                openAiService.streamChatCompletion(chatCompletionRequest).blockingForEach(chunks::add);
+                openAiService.streamChatCompletion(chatCompletionRequest).doOnError(Throwable::printStackTrace).blockingForEach(chunk -> {
+                    chunk.getChoices().stream().map(choice -> choice.getMessage().getContent())
+                            .filter(Objects::nonNull).findFirst().ifPresent(System.out::print);
+                    chunks.add(chunk);
+                });
+                openAiService.shutdownExecutor();
                 // if the last line code is correct, we can simply break the circle
                 break;
             } catch (Exception e) {
@@ -103,19 +130,12 @@ public class OpenAiUtils {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        ChatMessage chatMessage = new ChatMessage();
-        chatMessage.setRole(RoleEnum.ASSISTANT.getRoleName());
-        StringBuilder content = new StringBuilder();
-        for (ChatCompletionChunk chunk : chunks) {
-            for (ChatCompletionChoice choice : chunk.getChoices()) {
-                if (choice.getMessage().getContent() != null) {
-                    content.append(choice.getMessage().getContent());
-                }
-            }
-        }
-        chatMessage.setContent(content.toString());
-        chatMessages.add(chatMessage);
-        cache.put(user, chatMessages);
+        chatMessages.add(new ChatMessage(RoleEnum.ASSISTANT.getRoleName(), chunks.stream()
+                .flatMap(chunk -> chunk.getChoices().stream())
+                .map(ChatCompletionChoice::getMessage)
+                .map(ChatMessage::getContent)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining())));
     }
 
     public static List<String> createChatCompletion(String content) {
@@ -149,7 +169,6 @@ public class OpenAiUtils {
             e.printStackTrace();
         }
         contextInfo.addAll(chatCompletionRequest.getMessages());
-        cache.put(user, contextInfo);
         chatCompletionRequest.setMessages(contextInfo);
         List<ChatCompletionChoice> choices = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -193,7 +212,6 @@ public class OpenAiUtils {
             }
             chatMessages.add(choice.getMessage());
         }
-        cache.put(user, chatMessages);
         return results;
     }
 

@@ -16,26 +16,20 @@ import java.time.Duration;
  * @Description: OpenAiProxyService
  */
 public class OpenAiProxyService extends OpenAiService {
-    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10L);
-
-    public OpenAiProxyService(String token, String proxyHost, int proxyPort) {
-        this(token, DEFAULT_TIMEOUT, proxyHost, proxyPort);
-    }
-
     public OpenAiProxyService(String token, Duration timeout, String proxyHost, int proxyPort) {
-        this(buildApi(token, timeout, proxyHost, proxyPort));
-    }
-
-    public OpenAiProxyService(OpenAiApi api) {
-        super(api);
+        super(buildApi(token, timeout, proxyHost, proxyPort), defaultClient(token, timeout, proxyHost, proxyPort).dispatcher().executorService());
     }
 
     public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
         ObjectMapper mapper = defaultObjectMapper();
-        // Create proxy object
-        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        OkHttpClient client = defaultClient(token, timeout).newBuilder().proxy(proxy).build();
+        OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
         Retrofit retrofit = defaultRetrofit(client, mapper);
         return retrofit.create(OpenAiApi.class);
+    }
+
+    public static OkHttpClient defaultClient(String token, Duration timeout, String proxyHost, int proxyPort) {
+        // Create proxy object
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        return OpenAiService.defaultClient(token, timeout).newBuilder().proxy(proxy).build();
     }
 }
