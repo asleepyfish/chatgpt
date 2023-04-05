@@ -157,3 +157,57 @@ public class ChatGPTController {
 **我用的get 工具是idea里面下载的插件Fast Request的，用Postman也是可以的，但是要选择 Send and Download，上图中绿色的箭头是Send，蓝色的是Send and Download。**
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/333b38ec121d463db78031236e0664de.png)
+
+## 2.4 生成流式回答
+生成流式回答的方法是`OpenAiUtils`的`createStreamChatCompletion`方法，本工具类重载了同名的多个参数的方法，其中最通用的方法是
+```java
+public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest, OutputStream os) {...}
+```
+最简单的方法是
+```java
+public static void createStreamChatCompletion(String content) {...}
+```
+其中的content即本次对话的问题。
+
+这里需要主义的是，上述第一个方法中的`OutputStream os`其实是一个必传的对象，上述的最简单的方法实际上是默认传递的`System.out`这个`os`对象，也就是将流式问答的结果显示到IDEA的控制台。
+
+如果需要将流式问答的结果显示到其他界面可以自发的传入`OutputStream os`对象，这里有一个简便的方法是
+```java
+public static void createStreamChatCompletion(String content, OutputStream os) {...}
+```
+只需要输入问题，和输出流对象即可。
+
+下面将举例具体说明。（本文所有Demo的示例地址： [https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)）
+### 2.4.1 流式回答输出到IDEA控制台
+代码如下：
+```java
+@GetMapping("/streamChat")
+public void streamChat(String content) {
+    // OpenAiUtils.createStreamChatCompletion(content, System.out);
+    // 下面的默认和上面这句代码一样，是输出结果到控制台
+    OpenAiUtils.createStreamChatCompletion(content);
+}
+```
+然后使用Postman或者其他可以发送Get请求的工具发送请求。
+
+本次测试的结果如下面的Gif图所示
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/f951b9c30ecc457db467185608faecf2.gif)
+### 2.4.2 流式回答输出到浏览器页面
+上述的方法中输出流传入的是`System.out`对象，该对象实际上就是一个`PrintStream`对象，会把输出结果展示到控制台。
+
+如果需要将输出结果在浏览器展示，可以从前端传入一个`HttpServletResponse response`对象，拿到这个`response`以后将`response.getOutputStream()`这个输出流对象传入`createStreamChatCompletion`方法的入参中。同时，为了避免结果输出到浏览器产生乱码和支持流式输出，需要`ContentType`和`CharacterEncoding`。
+
+具体代码如下：
+```java
+@GetMapping("/streamChatWithWeb")
+public void streamChatWithWeb(String content, HttpServletResponse response) throws IOException {
+    // 需要指定response的ContentType为流式输出，且字符编码为UTF-8
+    response.setContentType("text/event-stream");
+    response.setCharacterEncoding("UTF-8");
+    OpenAiUtils.createStreamChatCompletion(content, response.getOutputStream());
+}
+```
+测试结果过程的Gif图如下所示：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/632cdcc9d59640caa388eefc00fe95b3.gif)

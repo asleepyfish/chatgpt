@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -58,18 +59,22 @@ public class OpenAiUtils {
     }
 
     public static void createStreamChatCompletion(String content) {
-        createStreamChatCompletion(content, "DEFAULT USER");
+        createStreamChatCompletion(content, "DEFAULT USER", System.out);
     }
 
-    public static void createStreamChatCompletion(String content, String user) {
-        createStreamChatCompletion(content, user, chatGPTProperties.getChatModel());
+    public static void createStreamChatCompletion(String content, OutputStream os) {
+        createStreamChatCompletion(content, "DEFAULT USER", os);
     }
 
-    public static void createStreamChatCompletion(String content, String user, String model) {
-        createStreamChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D);
+    public static void createStreamChatCompletion(String content, String user, OutputStream os) {
+        createStreamChatCompletion(content, user, chatGPTProperties.getChatModel(), os);
     }
 
-    public static void createStreamChatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
+    public static void createStreamChatCompletion(String content, String user, String model, OutputStream os) {
+        createStreamChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D, os);
+    }
+
+    public static void createStreamChatCompletion(String role, String content, String user, String model, Double temperature, Double topP, OutputStream os) {
         createStreamChatCompletion(ChatCompletionRequest.builder()
                 .model(model)
                 .messages(Collections.singletonList(new ChatMessage(role, content)))
@@ -77,10 +82,10 @@ public class OpenAiUtils {
                 .temperature(temperature)
                 .topP(topP)
                 .stream(true)
-                .build());
+                .build(), os);
     }
 
-    public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest) {
+    public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest, OutputStream os) {
         chatCompletionRequest.setStream(true);
         chatCompletionRequest.setN(1);
         String user = chatCompletionRequest.getUser();
@@ -101,7 +106,14 @@ public class OpenAiUtils {
                 }
                 openAiService.streamChatCompletion(chatCompletionRequest).doOnError(Throwable::printStackTrace).blockingForEach(chunk -> {
                     chunk.getChoices().stream().map(choice -> choice.getMessage().getContent())
-                            .filter(Objects::nonNull).findFirst().ifPresent(System.out::print);
+                            .filter(Objects::nonNull).findFirst().ifPresent(o -> {
+                                try {
+                                    os.write(o.getBytes(Charset.defaultCharset()));
+                                    os.flush();
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
                     chunks.add(chunk);
                 });
                 openAiService.shutdownExecutor();
