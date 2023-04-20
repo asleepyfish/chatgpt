@@ -116,7 +116,6 @@ public class OpenAiUtils {
                             });
                     chunks.add(chunk);
                 });
-                openAiService.shutdownExecutor();
                 // if the last line code is correct, we can simply break the circle
                 break;
             } catch (Exception e) {
