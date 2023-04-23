@@ -211,3 +211,11 @@ public void streamChatWithWeb(String content, HttpServletResponse response) thro
 测试结果过程的Gif图如下所示：
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/632cdcc9d59640caa388eefc00fe95b3.gif)
+
+### 2.4.3 流式回答结合Vue输出到前端界面
+调用的后端方法同`2.4.2`节方法`streamChatWithWeb`，前端只需要在界面传入问题，点击提问按钮即可返回结果流式输出到文本框中。
+
+测试结果过程的Gif图如下所示：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/9f4b704876da4004ab0bd576bd951621.gif)
+`Vue3` Demo的`Git`地址在文章开头有~
