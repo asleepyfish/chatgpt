@@ -7,6 +7,11 @@
 [![简体中文 badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-Simplified%20Chinese-blue)](./README.md)
 
 > 本文Demo地址：https://github.com/asleepyfish/chatgpt-demo
+
+> 流式输出结合Vue的Demo地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
+
+**注意：流式输出在2.4节，请仔细阅读到最后，谢谢！**
+
 # 1. 配置阶段
 ## 1.1 依赖引入
 `pom.xml`中引入依赖
