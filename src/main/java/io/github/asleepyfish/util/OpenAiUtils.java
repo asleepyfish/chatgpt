@@ -1,5 +1,6 @@
 package io.github.asleepyfish.util;
 
+import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.theokanning.openai.completion.CompletionChoice;
@@ -14,6 +15,10 @@ import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
+import io.github.asleepyfish.service.OpenAiProxyService;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -24,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +43,7 @@ import java.util.zip.ZipOutputStream;
  * @Description: provide external call-related interfaces
  */
 public class OpenAiUtils {
+
     private static final Log LOG = LogFactory.getLog(OpenAiUtils.class);
 
     private static OpenAiService openAiService;
@@ -47,15 +54,17 @@ public class OpenAiUtils {
 
     private static Cache<String, LinkedList<ChatMessage>> cache;
 
+    private static final String BASE_URL = "https://api.openai.com";
+
+    private static OkHttpClient client;
+
     public OpenAiUtils(OpenAiService openAiService, ChatGPTProperties chatGPTProperties) {
         OpenAiUtils.openAiService = openAiService;
         OpenAiUtils.chatGPTProperties = chatGPTProperties;
-        cache = chatGPTProperties.getSessionExpirationTime() == null ?
-                CacheBuilder.newBuilder()
-                        .build() :
-                CacheBuilder.newBuilder()
-                        .expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES)
-                        .build();
+        cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
+                CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
+        client = Strings.isNullOrEmpty(chatGPTProperties.getProxyHost()) ? OpenAiService.defaultClient(chatGPTProperties.getToken(), Duration.ZERO) :
+                OpenAiProxyService.defaultClient(chatGPTProperties.getToken(), Duration.ZERO, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort());
     }
 
     public static void createStreamChatCompletion(String content) {
@@ -382,6 +391,21 @@ public class OpenAiUtils {
         } catch (Exception e) {
             throw new ChatGPTException(ChatGPTErrorEnum.DOWNLOAD_IMAGE_ERROR);
         }
+    }
+
+    public static String billingUsage(String startDate, String endDate) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/v1/dashboard/billing/usage")
+                .build();
+        String responseBody = null;
+        try {
+            Response response = client.newCall(request).execute();
+            responseBody = response.body().string();
+            System.out.println(responseBody);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return responseBody;
     }
 
     public static void forceClearCache(String cacheName) {
