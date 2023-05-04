@@ -1,5 +1,6 @@
 package io.github.asleepyfish.util;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -16,6 +17,7 @@ import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
 import io.github.asleepyfish.service.OpenAiProxyService;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -28,8 +30,12 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -393,19 +399,58 @@ public class OpenAiUtils {
         }
     }
 
-    public static String billingUsage(String startDate, String endDate) {
-        Request request = new Request.Builder()
-                .url(BASE_URL + "/v1/dashboard/billing/usage")
-                .build();
-        String responseBody = null;
+    /**
+     * Get Bill
+     *
+     * @return Unit: (USD)
+     */
+    public static String billingUsage() {
+        BigDecimal totalUsage = BigDecimal.ZERO;
         try {
-            Response response = client.newCall(request).execute();
-            responseBody = response.body().string();
-            System.out.println(responseBody);
-        } catch (IOException e) {
+            LocalDate startDate = LocalDate.of(2022, 1, 1);
+            LocalDate endDate = LocalDate.now();
+            // the max query bills scope up to 100 days. The interval for each query is defined as 3 months.
+            Period threeMonth = Period.ofMonths(3);
+            LocalDate nextDate = startDate;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            while (nextDate.isBefore(endDate)) {
+                String left = nextDate.format(formatter);
+                nextDate = nextDate.plus(threeMonth);
+                String right = nextDate.format(formatter);
+                totalUsage = totalUsage.add(new BigDecimal(billingUsage(left, right)));
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return responseBody;
+        return totalUsage.toPlainString();
+    }
+
+    /**
+     * You can query bills for up to 100 days at a time.
+     *
+     * @param startDate startDate
+     * @param endDate   endDate
+     * @return Unit: (USD)
+     */
+    public static String billingUsage(String startDate, String endDate) {
+        HttpUrl.Builder urlBuildr = HttpUrl.parse(BASE_URL + "/v1/dashboard/billing/usage").newBuilder();
+        urlBuildr.addQueryParameter("start_date", startDate);
+        urlBuildr.addQueryParameter("end_date", endDate);
+        String url = urlBuildr.build().toString();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        String billingUsage = null;
+        try (Response response = client.newCall(request).execute();) {
+            String resStr = response.body().string();
+            JSONObject resJson = JSONObject.parseObject(resStr);
+            String cents = resJson.get("total_usage").toString();
+            billingUsage = new BigDecimal(cents).divide(new BigDecimal("100")).toPlainString();
+            System.out.println(billingUsage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return billingUsage;
     }
 
     public static void forceClearCache(String cacheName) {
