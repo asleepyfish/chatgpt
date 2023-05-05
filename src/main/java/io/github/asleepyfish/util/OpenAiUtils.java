@@ -441,7 +441,7 @@ public class OpenAiUtils {
                 .url(url)
                 .build();
         String billingUsage = null;
-        try (Response response = client.newCall(request).execute();) {
+        try (Response response = client.newCall(request).execute()) {
             String resStr = response.body().string();
             JSONObject resJson = JSONObject.parseObject(resStr);
             String cents = resJson.get("total_usage").toString();
