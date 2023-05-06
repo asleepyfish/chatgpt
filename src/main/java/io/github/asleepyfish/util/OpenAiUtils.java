@@ -115,7 +115,7 @@ public class OpenAiUtils {
         List<ChatCompletionChunk> chunks = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
-                // avoid frequently request, random sleep 0.5s~1s
+                // avoid frequently request, random sleep 0.3s~0.5s
                 if (i > 0) {
                     randomSleep();
                 }
@@ -199,7 +199,7 @@ public class OpenAiUtils {
         List<ChatCompletionChoice> choices = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
-                // avoid frequently request, random sleep 0.5s~1s
+                // avoid frequently request, random sleep 0.3s~0.5s
                 if (i > 0) {
                     randomSleep();
                 }
@@ -242,7 +242,7 @@ public class OpenAiUtils {
     }
 
     private static void randomSleep() throws InterruptedException {
-        Thread.sleep(500 + RANDOM.nextInt(500));
+        Thread.sleep(300 + RANDOM.nextInt(200));
     }
 
     private static boolean checkTokenUsage(String message) {
@@ -288,7 +288,7 @@ public class OpenAiUtils {
 
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
-                // avoid frequently request, random sleep 0.5s~1s
+                // avoid frequently request, random sleep 0.3s~0.5s
                 if (i > 0) {
                     randomSleep();
                 }
@@ -440,15 +440,24 @@ public class OpenAiUtils {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-        String billingUsage = null;
-        try (Response response = client.newCall(request).execute()) {
-            String resStr = response.body().string();
-            JSONObject resJson = JSONObject.parseObject(resStr);
-            String cents = resJson.get("total_usage").toString();
-            billingUsage = new BigDecimal(cents).divide(new BigDecimal("100")).toPlainString();
-            System.out.println(billingUsage);
-        } catch (Exception e) {
-            e.printStackTrace();
+        String billingUsage = "0";
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try (Response response = client.newCall(request).execute()) {
+                if (i > 0) {
+                    randomSleep();
+                }
+                String resStr = response.body().string();
+                JSONObject resJson = JSONObject.parseObject(resStr);
+                String cents = resJson.get("total_usage").toString();
+                billingUsage = new BigDecimal(cents).divide(new BigDecimal("100")).toPlainString();
+                break;
+            } catch (Exception e) {
+                LOG.error("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.QUERY_BILLINGUSAGE_ERROR, e.getMessage());
+                }
+            }
         }
         return billingUsage;
     }

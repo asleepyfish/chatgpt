@@ -29,11 +29,13 @@ public enum ChatGPTErrorEnum {
     /**
      * DOWNLOAD_IMAGE_ERROR
      */
-    DOWNLOAD_IMAGE_ERROR("10005", "failed to download image!");
+    DOWNLOAD_IMAGE_ERROR("10005", "failed to download image!"),
 
     /**
-     *
+     * QUERY_BILLINGUSAGE_ERROR
      */
+    QUERY_BILLINGUSAGE_ERROR("10006", "query billingUsage error, reason is %s.");
+
 
     private final String errorCode;
     private final String errorMessage;

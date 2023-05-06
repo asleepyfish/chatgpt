@@ -22,10 +22,10 @@ public class ChatGPTException extends RuntimeException {
         this.errorMessage = chatGPTErrorEnum.getErrorMessage();
     }
 
-    public ChatGPTException(ChatGPTErrorEnum chatGPTErrorEnum, Object... message) {
-        super(String.format(chatGPTErrorEnum.getErrorMessage(), message));
+    public ChatGPTException(ChatGPTErrorEnum chatGPTErrorEnum, Object... messages) {
+        super(String.format(chatGPTErrorEnum.getErrorMessage(), messages));
         this.errorCode = chatGPTErrorEnum.getErrorCode();
-        this.errorMessage = String.format(chatGPTErrorEnum.getErrorMessage(), message);
+        this.errorMessage = String.format(chatGPTErrorEnum.getErrorMessage(), messages);
     }
 
     public ChatGPTException(String errorCode, String errorMessage) {
