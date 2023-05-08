@@ -72,7 +72,11 @@ public class OpenAiProxyService extends OpenAiService {
         this.chatGPTProperties = chatGPTProperties;
         this.cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
                 CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
-        this.client = OpenAiProxyService.defaultClient(chatGPTProperties.getToken(), Duration.ZERO, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort());
+        this.client = OpenAiProxyService.defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort());
+    }
+
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties) {
+        this(chatGPTProperties, Duration.ZERO);
     }
 
     public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
