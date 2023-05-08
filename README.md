@@ -14,7 +14,7 @@
 
 # 版本更新说明
 - 1.1.5 增加查询账单功能`billingUsage`（单位：美元），可以选择传入开始和结束日期查询（最多100天），或者不传入参，此时表示查询所有日期账单。
-- 1.1.6 增加自定义OpenAiProxyService功能，支持单个SpringBoot中添加多个OpenAiProxyService实例，每个实例可以拥有个性化的参数；查询账单功能优化。
+- 1.1.6 增加自定义`OpenAiProxyService`功能，支持单个SpringBoot中添加多个`OpenAiProxyService`实例，每个实例可以拥有个性化的参数；查询账单功能优化。
 
 
 # 1. 配置阶段
@@ -229,3 +229,63 @@ public void streamChatWithWeb(String content, HttpServletResponse response) thro
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/9f4b704876da4004ab0bd576bd951621.gif)
 `Vue3` Demo的`Git`地址在文章开头有~
+
+## 2.5 查询账单
+查询账单提供了两个方法，金额单位均为`美元(USD)`，且均未对小数位截取，可以根据需要自行选择保留结果小数点位数。
+
+第一个是可以传入开始和结束日期，按照指定日期区间查询的方法：
+```java
+public String billingUsage(String startDate, String endDate) {...}
+```
+其中`startDate`和`endDate`区间范围不超过100天。
+
+第二个方法是查询从`2022年1月1日`距今的账单的方法：
+```java
+public String billingUsage() {...}
+```
+### 2.5.1 测试
+
+测试代码如下：
+```java
+@GetMapping("/billingUsage")
+public void billingUsage() {
+	String monthUsage = OpenAiUtils.billingUsage("2023-04-01", "2023-05-01");
+	System.out.println("四月使用：" + monthUsage + "美元");
+	String totalUsage = OpenAiUtils.billingUsage();
+	System.out.println("一共使用：" + totalUsage + "美元");
+}
+```
+测试结果如下：
+```txt
+四月使用：0.9864320000000001美元
+一共使用：1.120594美元
+```
+# 3. 扩展
+## 3.1 自定义OpenAiProxyService
+由于之前的版本中使用@Bean的方式初始化`OpenAiProxyService`和`OpenAiUtils`，导致一个SpringBoot中实例是唯一的。
+
+但是有时候需要在项目里自定义多个`OpenAiProxyService`实例，来装配不同的`ChatGPTProperties`信息（可以实例化多个Token（sk-xxxxxxxxxxx）使用）。
+
+所以在`1.1.6`版本中新增了自定义`OpenAiProxyService`功能。在维持原有SpringBoot项目中全局的一个`OpenAiUtils`实例的基础上，现在可以自定义不同的`OpenAiProxyService`实例，并且实例之间的属性是完全隔离的。
+
+下面是一个Demo用来展示使用方法。
+```java
+@GetMapping("/customToken")
+public void customToken() {
+	ChatGPTProperties chatGPTProperties = new ChatGPTProperties();
+	chatGPTProperties.setToken("sk-002xxxxxxxxxxxxxxxxxxxxxxxxx");
+	chatGPTProperties.setProxyHost("127.0.0.1");
+	chatGPTProperties.setProxyPort(7890);
+	OpenAiProxyService openAiProxyService = new OpenAiProxyService(chatGPTProperties, Duration.ZERO);
+	// 直接使用new出来的openAiProxyService来调用方法，每个OpenAiProxyService都拥有自己的Token。
+	// 这样在一个SpringBoot项目中，就可以有多个Token，可以有更多的免费额度供使用了
+	openAiProxyService.createStreamChatCompletion("Java的三大特性是什么");
+}
+```
+在上述方法中，新new了一个`ChatGPTProperties`对象，并且set了`token`为`sk-002xxxxxxxxxxxxxxxxxxxxxxxxx`（这里不需要设置除了`token`、`proxyHost`和`proxyPort`以外的其他属性，因为`ChatGPTProperties`的其他属性拥有默认值，如果需要对其他属性做修改，可以自行设置。**注意：sessionExpirationTime没有默认值，表示会话没有过期时间，如果需要设置会话过期时间，请set该值。**）
+
+而在`application.yml`中设置的`token`为`sk-001xxxxxxxxxxxxxxxxxxxxxxxxx`，这个token是给全局唯一的`OpenAitils`用的，这样就可以通过`OpenAiProxyService`的构造方法new出来一个新的`OpenAiProxyService`实例，其中构造方法的第二个参数直接填`Duration.ZERO`就好，表示Http调用请求没有超时时间，后续版本更新中，我会新增一个只有一个入参的构造方法。
+
+这样直接使用new出来的`openAiProxyService`来调用方法，每个`OpenAiProxyService`都拥有自己的Token。
+
+在一个SpringBoot项目中，就可以有多个`Token`，可以有更多的免费额度供使用了。
