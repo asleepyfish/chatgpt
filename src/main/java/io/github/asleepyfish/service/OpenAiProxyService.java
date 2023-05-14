@@ -60,11 +60,11 @@ public class OpenAiProxyService extends OpenAiService {
 
     private static final Random RANDOM = new Random();
 
-    private final Cache<String, LinkedList<ChatMessage>> cache;
-
     private final ChatGPTProperties chatGPTProperties;
 
     private final OkHttpClient client;
+
+    private Cache<String, LinkedList<ChatMessage>> cache;
 
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout) {
         super(buildApi(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()),
@@ -476,16 +476,32 @@ public class OpenAiProxyService extends OpenAiService {
         return billingUsage;
     }
 
+    public void forceClearCache(String cacheName) {
+        this.cache.invalidate(cacheName);
+    }
+
+    public Cache<String, LinkedList<ChatMessage>> retrieveCache() {
+        return this.cache;
+    }
+
+    public LinkedList<ChatMessage> retrieveChatMessage(String key) {
+        return this.cache.getIfPresent(key);
+    }
+
+    public void setCache(Cache<String, LinkedList<ChatMessage>> cache) {
+        this.cache = cache;
+    }
+
+    public void addCache(String key, LinkedList<ChatMessage> chatMessages) {
+        this.cache.put(key, chatMessages);
+    }
+
     private void randomSleep() throws InterruptedException {
         Thread.sleep(500 + RANDOM.nextInt(200));
     }
 
     private static boolean checkTokenUsage(String message) {
         return message.contains("This model's maximum context length is");
-    }
-
-    public void forceClearCache(String cacheName) {
-        cache.invalidate(cacheName);
     }
 
     private BufferedImage getImageFromBase64(String base64) throws IOException {

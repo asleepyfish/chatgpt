@@ -1,5 +1,6 @@
 package io.github.asleepyfish.util;
 
+import com.google.common.cache.Cache;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
@@ -14,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -188,5 +190,13 @@ public class OpenAiUtils {
 
     public static void forceClearCache(String cacheName) {
         openAiProxyService.forceClearCache(cacheName);
+    }
+
+    public static Cache<String, LinkedList<ChatMessage>> retrieveCache() {
+        return openAiProxyService.retrieveCache();
+    }
+
+    public static LinkedList<ChatMessage> retrieveChatMessage(String key) {
+        return openAiProxyService.retrieveChatMessage(key);
     }
 }

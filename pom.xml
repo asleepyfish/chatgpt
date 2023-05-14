@@ -6,7 +6,7 @@
 
     <groupId>io.github.asleepyfish</groupId>
     <artifactId>chatgpt</artifactId>
-    <version>1.1.6</version>
+    <version>1.2.0</version>
 
     <url>https://github.com/asleepyfish/chatgpt</url>
     <name>chatgpt</name>
