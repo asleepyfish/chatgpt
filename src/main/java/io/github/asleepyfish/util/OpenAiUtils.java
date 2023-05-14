@@ -199,4 +199,12 @@ public class OpenAiUtils {
     public static LinkedList<ChatMessage> retrieveChatMessage(String key) {
         return openAiProxyService.retrieveChatMessage(key);
     }
+
+    public static void setCache(Cache<String, LinkedList<ChatMessage>> cache) {
+        openAiProxyService.setCache(cache);
+    }
+
+    public static void addCache(String key, LinkedList<ChatMessage> chatMessages) {
+        openAiProxyService.addCache(key, chatMessages);
+    }
 }
