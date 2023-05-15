@@ -153,6 +153,7 @@ public class OpenAiProxyService extends OpenAiService {
                             });
                     chunks.add(chunk);
                 });
+                os.close();
                 // if the last line code is correct, we can simply break the circle
                 break;
             } catch (Exception e) {
