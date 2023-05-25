@@ -16,12 +16,11 @@ import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
+import io.github.asleepyfish.entity.billing.Billing;
+import io.github.asleepyfish.entity.billing.Subscription;
 import io.github.asleepyfish.enums.*;
 import io.github.asleepyfish.exception.ChatGPTException;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
@@ -36,6 +35,7 @@ import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
@@ -415,19 +415,20 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     /**
-     * Get Bill
+     * Get Bill Since startDate
      *
-     * @return Unit: (USD)
+     * @param startDate startDate (yyyy-MM-dd)
+     * @return bill
      */
-    public String billingUsage() {
+    public String billingUsage(String... startDate) {
+        String start = startDate.length == 0 ? "2023-01-01" : startDate[0];
         BigDecimal totalUsage = BigDecimal.ZERO;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try {
-            LocalDate startDate = LocalDate.of(2022, 1, 1);
             LocalDate endDate = LocalDate.now();
             // the max query bills scope up to 100 days. The interval for each query is defined as 3 months.
             Period threeMonth = Period.ofMonths(3);
-            LocalDate nextDate = startDate;
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate nextDate = LocalDate.parse(start, formatter);
             while (nextDate.isBefore(endDate)) {
                 String left = nextDate.format(formatter);
                 nextDate = nextDate.plus(threeMonth);
@@ -443,8 +444,8 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * You can query bills for up to 100 days at a time.
      *
-     * @param startDate startDate
-     * @param endDate   endDate
+     * @param startDate startDate (yyyy-MM-dd)
+     * @param endDate   endDate  (yyyy-MM-dd)
      * @return Unit: (USD)
      */
     public String billingUsage(String startDate, String endDate) {
@@ -477,6 +478,55 @@ public class OpenAiProxyService extends OpenAiService {
         return billingUsage;
     }
 
+    /**
+     * You can query all the available billing for a given date range.
+     *
+     * @param startDate startDate
+     * @return billing
+     */
+    public Billing billing(String... startDate) {
+        String start = startDate.length == 0 ? "2023-01-01" : startDate[0];
+        Subscription subscription = subscription();
+        String usage = billingUsage(start);
+        String dueDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date(subscription.getAccessUntil()));
+        String total = subscription.getSystemHardLimitUsd();
+        Billing billing = new Billing();
+        billing.setDueDate(dueDate);
+        billing.setTotal(total);
+        billing.setUsage(usage);
+        billing.setBalance(new BigDecimal(total).subtract(new BigDecimal(usage)).toPlainString());
+        return billing;
+    }
+
+    /**
+     * Obtain subscription information
+     *
+     * @return subscription information
+     */
+    public Subscription subscription() {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/v1/dashboard/billing/subscription")
+                .build();
+        Subscription subscription = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try (Response response = client.newCall(request).execute()) {
+                if (i > 0) {
+                    randomSleep();
+                }
+                String resStr = response.body().string();
+                subscription = JSONObject.parseObject(resStr, Subscription.class);
+                break;
+            } catch (Exception e) {
+                LOG.error("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.QUERY_BILLINGUSAGE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return subscription;
+    }
+
     public void forceClearCache(String cacheName) {
         this.cache.invalidate(cacheName);
     }
@@ -502,7 +552,7 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     private static boolean checkTokenUsage(String message) {
-        return message.contains("This model's maximum context length is");
+        return message != null && message.contains("This model's maximum context length is");
     }
 
     private BufferedImage getImageFromBase64(String base64) throws IOException {

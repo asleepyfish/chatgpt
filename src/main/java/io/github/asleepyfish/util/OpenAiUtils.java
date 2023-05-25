@@ -5,6 +5,8 @@ import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.image.CreateImageRequest;
+import io.github.asleepyfish.entity.billing.Billing;
+import io.github.asleepyfish.entity.billing.Subscription;
 import io.github.asleepyfish.enums.ImageSizeEnum;
 import io.github.asleepyfish.enums.ModelEnum;
 import io.github.asleepyfish.enums.RoleEnum;
@@ -169,12 +171,13 @@ public class OpenAiUtils {
     }
 
     /**
-     * Get Bill
+     * Get Bill Since startDate
      *
-     * @return Unit: (USD)
+     * @param startDate startDate (yyyy-MM-dd)
+     * @return bill
      */
-    public static String billingUsage() {
-        return openAiProxyService.billingUsage();
+    public static String billingUsage(String... startDate) {
+        return openAiProxyService.billingUsage(startDate);
     }
 
     /**
@@ -186,6 +189,24 @@ public class OpenAiUtils {
      */
     public static String billingUsage(String startDate, String endDate) {
         return openAiProxyService.billingUsage(startDate, endDate);
+    }
+
+    /**
+     * You can query all the available billing for a given date range.
+     *
+     * @param startDate startDate
+     * @return billing
+     */
+    public static Billing billing(String... startDate) {
+        return openAiProxyService.billing(startDate);
+    }
+    /**
+     * Obtain subscription information
+     *
+     * @return subscription information
+     */
+    public static Subscription subscription() {
+        return openAiProxyService.subscription();
     }
 
     public static void forceClearCache(String cacheName) {
