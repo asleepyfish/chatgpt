@@ -488,7 +488,7 @@ public class OpenAiProxyService extends OpenAiService {
         String start = startDate.length == 0 ? "2023-01-01" : startDate[0];
         Subscription subscription = subscription();
         String usage = billingUsage(start);
-        String dueDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date(subscription.getAccessUntil()));
+        String dueDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date(subscription.getAccessUntil() * 1000));
         String total = subscription.getSystemHardLimitUsd();
         Billing billing = new Billing();
         billing.setDueDate(dueDate);

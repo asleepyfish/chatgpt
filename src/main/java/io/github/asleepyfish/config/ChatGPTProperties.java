@@ -1,6 +1,9 @@
 package io.github.asleepyfish.config;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -10,6 +13,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Data
 @ConfigurationProperties(prefix = "chatgpt")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatGPTProperties {
     /**
      * OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -20,16 +26,19 @@ public class ChatGPTProperties {
      * The name of the model to use.
      * Required if specifying a fine-tuned model or if using the new v1/completions endpoint.
      */
+    @Builder.Default
     private String model = "text-davinci-003";
 
     /**
      * chatModel which use by createChatCompletion
      */
+    @Builder.Default
     private String chatModel = "gpt-3.5-turbo";
 
     /**
      * Timeout retries
      */
+    @Builder.Default
     private int retries = 5;
 
     /**
