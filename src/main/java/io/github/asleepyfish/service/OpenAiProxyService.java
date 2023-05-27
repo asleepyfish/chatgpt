@@ -169,6 +169,8 @@ public class OpenAiProxyService extends OpenAiService {
                 LOG.error("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
+                    // when the call fails, remove the last item in the list
+                    Objects.requireNonNull(cache.getIfPresent(user)).removeLast();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, message);
                 }
             }
@@ -242,6 +244,8 @@ public class OpenAiProxyService extends OpenAiService {
                 LOG.error("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
+                    // when the call fails, remove the last item in the list
+                    Objects.requireNonNull(cache.getIfPresent(user)).removeLast();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, message);
                 }
             }
