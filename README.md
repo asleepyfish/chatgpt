@@ -6,15 +6,25 @@
 [![English badge](https://img.shields.io/badge/%E8%8B%B1%E6%96%87-English-blue)](./README_en.md)
 [![简体中文 badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-Simplified%20Chinese-blue)](./README.md)
 
-> 本文Demo地址：https://github.com/asleepyfish/chatgpt-demo
+> 源码及更详细的介绍说明参见Git上的ReadME.md文档
+[https://github.com/asleepyfish/chatgpt](https://github.com/asleepyfish/chatgpt)
+
+> 本文结合SpringBoot的Demo地址：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
 
 > 流式输出结合Vue的Demo地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
 
-**注意：流式输出在2.4节，请仔细阅读到最后，谢谢！**
+==2023-05-28更新==
+> 制作了一个基于本文sdk包的对话网站，可前往[http://chatgpt.alpacos.cn/](http://chatgpt.alpacos.cn/)体验。
+> **[注]：** 由于本人的服务器的带宽较低，首次加载页面可能会略有些慢，请耐心等待，详细使用说明请查看另一篇博客~ 👇
+>  [ChatGPT网页版（基于SpringBoot和Vue）](https://blog.csdn.net/qq_41821963/article/details/130918024?spm=1001.2014.3001.5502)
+
+**注意：** 流式输出在2.4节，请仔细阅读到最后。
 
 # 版本更新说明
 - 1.1.5 增加查询账单功能`billingUsage`（单位：美元），可以选择传入开始和结束日期查询（最多100天），或者不传入参，此时表示查询所有日期账单。
 - 1.1.6 增加自定义`OpenAiProxyService`功能，支持单个SpringBoot中添加多个`OpenAiProxyService`实例，每个实例可以拥有个性化的参数；查询账单功能优化。
+-  1.2.0 增加`subscription`方法（查询订阅信息，包括订阅到期日和账号额度等信息，但是没有使用量情况，使用通过`billingUsage`方法查询使用量），增加`billing`方法，整合了`subscription`和`billingUsage`方法，出参包括订阅到期日、额度、使用量、余量等信息。增加对内部cache的多种操作，包括获取，赋值等操作。
+- 1.2.1 `billing`方法中出参`dueDate`取值逻辑修改，`ChatGPTProperties`类支持build链式创建对象。
 
 
 # 1. 配置阶段
@@ -230,7 +240,7 @@ public void streamChatWithWeb(String content, HttpServletResponse response) thro
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/9f4b704876da4004ab0bd576bd951621.gif)
 `Vue3` Demo的`Git`地址在文章开头有~
 
-## 2.5 查询账单
+## 2.5 查询账单和订阅
 查询账单提供了两个方法，金额单位均为`美元(USD)`，且均未对小数位截取，可以根据需要自行选择保留结果小数点位数。
 
 第一个是可以传入开始和结束日期，按照指定日期区间查询的方法：
@@ -239,26 +249,54 @@ public String billingUsage(String startDate, String endDate) {...}
 ```
 其中`startDate`和`endDate`区间范围不超过100天。
 
-第二个方法是查询从`2022年1月1日`距今的账单的方法：
+第二个方法是一个入参为可变参数的方法，当不传入参时，查询从`2023年1月1日`距今的账单的方法，如果有人的订阅日早于`2023年1月1日`可以传入自定义账单起始日期：
 ```java
-public String billingUsage() {...}
+public String billingUsage(String... startDate) {...}
 ```
+查询订阅提供了一个方法，这个方法的出参中包括了订阅到期日，总额度等信息：
+
+```java
+public Subscription subscription() {...}
+```
+
+**由于查询总额度和查询使用量是两个接口，这里封装了一个方法来将几个比较有用的参数统一返回的方法，方法如下：**
+
+```java
+public Billing billing(String... startDate) {...}
+```
+
+这个方法的入参也是一个可变入参，不传参时，`startDate`默认为`2023-01-01`，如果账单开始日早于该天，可以传入指定的`startDate`。出参`Billing`中有四个参数：`dueDate`（额度到期日），`total`（额度总量），`usage`（已使用量），`balance`（余额）。
+
 ### 2.5.1 测试
 
 测试代码如下：
 ```java
-@GetMapping("/billingUsage")
-public void billingUsage() {
-	String monthUsage = OpenAiUtils.billingUsage("2023-04-01", "2023-05-01");
-	System.out.println("四月使用：" + monthUsage + "美元");
-	String totalUsage = OpenAiUtils.billingUsage();
-	System.out.println("一共使用：" + totalUsage + "美元");
+@GetMapping("/billing")
+public void billing() {
+    String monthUsage = OpenAiUtils.billingUsage("2023-04-01", "2023-05-01");
+    log.info("四月使用：{}美元", monthUsage);
+    String totalUsage = OpenAiUtils.billingUsage();
+    log.info("一共使用：{}美元", totalUsage);
+    String stageUsage = OpenAiUtils.billingUsage("2023-01-31");
+    log.info("自从2023/01/31使用：{}美元", stageUsage);
+    Subscription subscription = OpenAiUtils.subscription();
+    log.info("订阅信息（包含到期日期，账户总额度等信息）：{}", subscription);
+    // dueDate为到期日，total为总额度，usage为使用量，balance为余额
+    Billing totalBilling = OpenAiUtils.billing();
+    log.info("历史账单信息：{}", totalBilling);
+    // 默认不传参的billing方法的使用量usage从2023-01-01开始，如果用户的账单使用早于该日期，可以传入开始日期startDate
+    Billing posibleStartBilling = OpenAiUtils.billing("2022-01-01");
+    log.info("可能的历史账单信息：{}", posibleStartBilling);
 }
 ```
 测试结果如下：
 ```txt
 四月使用：0.9864320000000001美元
-一共使用：1.120594美元
+一共使用：2.2074280000000002美元
+自从2023/01/31使用：2.2074280000000001美元
+订阅信息（包含到期日期，账户总额度等信息）：Subscription(object=billing_subscription, hasPaymentMethod=false, canceled=false, canceledAt=null, delinquent=null, accessUntil=1688169600, softLimit=66667, hardLimit=83334, systemHardLimit=83334, softLimitUsd=4.00002, hardLimitUsd=5.00004, systemHardLimitUsd=5.00004, plan=Plan(title=Explore, id=free), accountName=Leo Mikey, poNumber=0, billingEmail=null, taxIds=null, billingAddress=null, businessAddress=null)
+历史账单信息：Billing(dueDate=2023-07-01, total=5.00004, usage=2.2074280000000002, balance=2.7926119999999998)
+可能的历史账单信息：Billing(dueDate=2023-07-01, total=5.00004, usage=2.2074280000000002, balance=2.7926119999999998)
 ```
 # 3. 扩展
 ## 3.1 自定义OpenAiProxyService
