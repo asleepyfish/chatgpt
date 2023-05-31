@@ -10,8 +10,17 @@ public enum RoleEnum {
      * system
      */
     SYSTEM("system"),
+
+    /**
+     * assistant
+     */
     ASSISTANT("assistant"),
+
+    /**
+     * user
+     */
     USER("user");
+
     private final String roleName;
 
     RoleEnum(String roleName) {

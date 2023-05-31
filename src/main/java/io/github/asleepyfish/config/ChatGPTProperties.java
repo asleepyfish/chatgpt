@@ -1,5 +1,6 @@
 package io.github.asleepyfish.config;
 
+import io.github.asleepyfish.enums.ModelEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,13 +28,13 @@ public class ChatGPTProperties {
      * Required if specifying a fine-tuned model or if using the new v1/completions endpoint.
      */
     @Builder.Default
-    private String model = "text-davinci-003";
+    private String model = ModelEnum.TEXT_DAVINCI_003.getModelName();
 
     /**
      * chatModel which use by createChatCompletion
      */
     @Builder.Default
-    private String chatModel = "gpt-3.5-turbo";
+    private String chatModel = ModelEnum.GPT_35_TURBO.getModelName();
 
     /**
      * Timeout retries

@@ -6,6 +6,7 @@ package io.github.asleepyfish.enums;
  * @Description: ImageSizeEnum
  */
 public enum ImageSizeEnum {
+
     /**
      * 256x256
      */
