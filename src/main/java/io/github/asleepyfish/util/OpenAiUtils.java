@@ -5,6 +5,7 @@ import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.model.Model;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
 import io.github.asleepyfish.enums.ImageSizeEnum;
@@ -200,6 +201,7 @@ public class OpenAiUtils {
     public static Billing billing(String... startDate) {
         return openAiProxyService.billing(startDate);
     }
+
     /**
      * Obtain subscription information
      *
@@ -207,6 +209,25 @@ public class OpenAiUtils {
      */
     public static Subscription subscription() {
         return openAiProxyService.subscription();
+    }
+
+    /**
+     * listModels
+     *
+     * @return list of models
+     */
+    public static List<Model> listModels() {
+        return openAiProxyService.listModels();
+    }
+
+    /**
+     * getModel
+     *
+     * @param model model
+     * @return model
+     */
+    public static Model getModel(String model) {
+        return openAiProxyService.getModel(model);
     }
 
     public static void forceClearCache(String cacheName) {
