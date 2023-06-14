@@ -232,7 +232,7 @@ public class OpenAiUtils {
         return openAiProxyService.getModel(model);
     }
 
-    public String edit(String input, String instruction) {
+    public static String edit(String input, String instruction) {
         return openAiProxyService.edit(input, instruction);
     }
 

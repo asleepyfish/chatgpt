@@ -14,7 +14,7 @@ public enum EditModelEnum {
     /**
      * text_davinci_edit_001
      */
-    TEXT_DAVINCI_EDIT_001("text_davinci_edit_001"),
+    TEXT_DAVINCI_EDIT_001("text-davinci-edit-001"),
 
     /**
      * code_davinci_edit_001
