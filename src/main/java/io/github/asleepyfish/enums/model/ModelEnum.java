@@ -1,6 +1,9 @@
-package io.github.asleepyfish.enums;
+package io.github.asleepyfish.enums.model;
 
+import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.util.Objects;
 
@@ -9,6 +12,8 @@ import java.util.Objects;
  * @Date: 2023-02-08 22:19
  * @Description: ModelEnum
  */
+@Getter
+@AllArgsConstructor
 public enum ModelEnum {
 
     /**
@@ -32,6 +37,21 @@ public enum ModelEnum {
     GPT_4_32K_0314("gpt-4-32k-0314", 32768),
 
     /**
+     * GPT-3.5-turbo-16k
+     */
+    GPT_35_TURBO_16K("gpt-3.5-turbo-16k", 16384),
+
+    /**
+     * GPT-3.5-turbo-0613
+     */
+    GPT_35_TURBO_0613("gpt-3.5-turbo-0613", 4096),
+
+    /**
+     * gpt-3.5-turbo-16k-0613
+     */
+    GPT_35_TURBO_16K_0613("gpt-3.5-turbo-16k-0613", 16384),
+
+    /**
      * gpt-3.5-turbo
      */
     GPT_35_TURBO("gpt-3.5-turbo", 4096),
@@ -51,19 +71,6 @@ public enum ModelEnum {
     private final String modelName;
 
     private final Integer maxTokens;
-
-    ModelEnum(String modelName, Integer maxTokens) {
-        this.modelName = modelName;
-        this.maxTokens = maxTokens;
-    }
-
-    public String getModelName() {
-        return modelName;
-    }
-
-    public Integer getMaxTokens() {
-        return maxTokens;
-    }
 
     public static Integer getMaxTokens(String modelName) {
         for (ModelEnum modelEnum : values()) {

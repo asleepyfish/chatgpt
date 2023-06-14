@@ -1,6 +1,6 @@
 package io.github.asleepyfish.exception;
 
-import io.github.asleepyfish.enums.ChatGPTErrorEnum;
+import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
 
 /**
  * @Author: asleepyfish

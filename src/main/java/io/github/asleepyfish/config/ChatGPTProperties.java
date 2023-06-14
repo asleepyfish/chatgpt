@@ -1,6 +1,6 @@
 package io.github.asleepyfish.config;
 
-import io.github.asleepyfish.enums.ModelEnum;
+import io.github.asleepyfish.enums.model.ModelEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

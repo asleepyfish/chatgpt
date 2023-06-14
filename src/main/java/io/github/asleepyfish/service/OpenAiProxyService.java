@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
 import com.theokanning.openai.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
@@ -12,15 +13,26 @@ import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionChunk;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.edit.EditChoice;
+import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
-import io.github.asleepyfish.enums.*;
+import io.github.asleepyfish.enums.chat.FinishReasonEnum;
+import io.github.asleepyfish.enums.chat.RoleEnum;
+import io.github.asleepyfish.enums.edit.EditModelEnum;
+import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
+import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
+import io.github.asleepyfish.enums.image.ImageSizeEnum;
+import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
-import okhttp3.*;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
@@ -529,6 +541,52 @@ public class OpenAiProxyService extends OpenAiService {
             }
         }
         return subscription;
+    }
+
+    public String edit(String input, String instruction) {
+        return edit(input, instruction, EditModelEnum.TEXT_DAVINCI_EDIT_001);
+    }
+
+    public String edit(String input, String instruction, EditModelEnum editModelEnum) {
+        return edit(input, instruction, 1D, 1D, editModelEnum);
+    }
+
+    public String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
+        return edit(EditRequest.builder()
+                .model(editModelEnum.getModelName())
+                .input(input)
+                .instruction(instruction)
+                .temperature(temperature)
+                .topP(topP)
+                .build()).get(0);
+    }
+
+    /**
+     * edit
+     *
+     * @param editRequest editRequest
+     * @return results
+     */
+    public List<String> edit(EditRequest editRequest) {
+        List<EditChoice> choices = Lists.newArrayList();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                choices = super.createEdit(editRequest).getChoices();
+                break;
+            } catch (Exception e) {
+                LOG.error("edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.EDIT_ERROR, e.getMessage());
+                }
+            }
+        }
+        List<String> results = Lists.newArrayList();
+        choices.forEach(choice -> results.add(choice.getText()));
+        return results;
     }
 
     public void forceClearCache(String cacheName) {

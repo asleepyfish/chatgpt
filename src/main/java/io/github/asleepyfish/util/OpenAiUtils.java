@@ -4,13 +4,15 @@ import com.google.common.cache.Cache;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.model.Model;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
-import io.github.asleepyfish.enums.ImageSizeEnum;
-import io.github.asleepyfish.enums.ModelEnum;
-import io.github.asleepyfish.enums.RoleEnum;
+import io.github.asleepyfish.enums.edit.EditModelEnum;
+import io.github.asleepyfish.enums.image.ImageSizeEnum;
+import io.github.asleepyfish.enums.model.ModelEnum;
+import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.service.OpenAiProxyService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -228,6 +230,28 @@ public class OpenAiUtils {
      */
     public static Model getModel(String model) {
         return openAiProxyService.getModel(model);
+    }
+
+    public String edit(String input, String instruction) {
+        return openAiProxyService.edit(input, instruction);
+    }
+
+    public static String edit(String input, String instruction, EditModelEnum editModelEnum) {
+        return openAiProxyService.edit(input, instruction, editModelEnum);
+    }
+
+    public static String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
+        return openAiProxyService.edit(instruction, instruction, temperature, topP, editModelEnum);
+    }
+
+    /**
+     * edit
+     *
+     * @param editRequest editRequest
+     * @return results
+     */
+    public static List<String> edit(EditRequest editRequest) {
+        return openAiProxyService.edit(editRequest);
     }
 
     public static void forceClearCache(String cacheName) {

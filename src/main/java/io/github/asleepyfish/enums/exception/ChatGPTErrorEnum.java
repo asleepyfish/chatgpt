@@ -1,10 +1,15 @@
-package io.github.asleepyfish.enums;
+package io.github.asleepyfish.enums.exception;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * @Author: asleepyfish
  * @Date: 2023-02-08 19:50
  * @Description: ChatGPTErrorEnum
  */
+@Getter
+@AllArgsConstructor
 public enum ChatGPTErrorEnum {
     /**
      * FAILED_TO_GENERATE_ANSWER
@@ -34,22 +39,14 @@ public enum ChatGPTErrorEnum {
     /**
      * QUERY_BILLINGUSAGE_ERROR
      */
-    QUERY_BILLINGUSAGE_ERROR("10006", "query billingUsage error, reason is %s.");
+    QUERY_BILLINGUSAGE_ERROR("10006", "query billingUsage error, reason is %s."),
+
+    /**
+     * EDIT_ERROR
+     */
+    EDIT_ERROR("10007", "edit error, reason is %s.");
 
 
     private final String errorCode;
     private final String errorMessage;
-
-    ChatGPTErrorEnum(String errorCode, String errorMessage) {
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
 }

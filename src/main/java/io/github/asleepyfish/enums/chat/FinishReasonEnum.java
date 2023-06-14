@@ -1,10 +1,15 @@
-package io.github.asleepyfish.enums;
+package io.github.asleepyfish.enums.chat;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * @Author: asleepyfish
  * @Date: 2023-02-08 21:38
  * @Description: FinishReasonEnum
  */
+@Getter
+@AllArgsConstructor
 public enum FinishReasonEnum {
     /**
      * length
@@ -12,12 +17,4 @@ public enum FinishReasonEnum {
     LENGTH("length"),
     STOP("stop");
     private final String message;
-
-    FinishReasonEnum(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
 }

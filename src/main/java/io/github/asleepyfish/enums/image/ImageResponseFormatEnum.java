@@ -1,10 +1,15 @@
-package io.github.asleepyfish.enums;
+package io.github.asleepyfish.enums.image;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
  * @Author: asleepyfish
  * @Date: 2023-02-14 00:25
  * @Description: ImageResponseFormatEnum
  */
+@Getter
+@AllArgsConstructor
 public enum ImageResponseFormatEnum {
     /**
      * url
@@ -12,12 +17,4 @@ public enum ImageResponseFormatEnum {
     URL("url"),
     B64_JSON("b64_json");
     private final String responseFormat;
-
-    ImageResponseFormatEnum(String responseFormat) {
-        this.responseFormat = responseFormat;
-    }
-
-    public String getResponseFormat() {
-        return responseFormat;
-    }
 }
