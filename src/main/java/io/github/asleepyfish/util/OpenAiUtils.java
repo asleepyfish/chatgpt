@@ -6,7 +6,6 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
-import com.theokanning.openai.embedding.Embedding;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageRequest;
@@ -268,7 +267,7 @@ public class OpenAiUtils {
      * @param text text
      * @return results
      */
-    public static List<Embedding> embeddings(String text) {
+    public static List<Double> embeddings(String text) {
         return openAiProxyService.embeddings(text);
     }
 
@@ -279,7 +278,7 @@ public class OpenAiUtils {
      * @param embeddingModelEnum embeddingModelEnum
      * @return results
      */
-    public static List<Embedding> embeddings(String text, EmbeddingModelEnum embeddingModelEnum) {
+    public static List<Double> embeddings(String text, EmbeddingModelEnum embeddingModelEnum) {
         return openAiProxyService.embeddings(text, embeddingModelEnum);
     }
 

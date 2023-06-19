@@ -9,10 +9,12 @@ import com.google.common.collect.Lists;
 import com.theokanning.openai.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
-import com.theokanning.openai.completion.chat.*;
+import com.theokanning.openai.completion.chat.ChatCompletionChoice;
+import com.theokanning.openai.completion.chat.ChatCompletionChunk;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
-import com.theokanning.openai.embedding.Embedding;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageRequest;
@@ -604,7 +606,7 @@ public class OpenAiProxyService extends OpenAiService {
      * @param input input
      * @return results
      */
-    public List<Embedding> embeddings(String input) {
+    public List<Double> embeddings(String input) {
         return embeddings(input, EmbeddingModelEnum.TEXT_EMBEDDING_ADA_002);
     }
 
@@ -615,11 +617,11 @@ public class OpenAiProxyService extends OpenAiService {
      * @param embeddingModelEnum embeddingModelEnum
      * @return results
      */
-    public List<Embedding> embeddings(String input, EmbeddingModelEnum embeddingModelEnum) {
+    public List<Double> embeddings(String input, EmbeddingModelEnum embeddingModelEnum) {
         return embeddings(EmbeddingRequest.builder()
                 .input(Collections.singletonList(input))
                 .model(embeddingModelEnum.getModelName())
-                .build()).getData();
+                .build()).getData().get(0).getEmbedding();
     }
 
     /**
