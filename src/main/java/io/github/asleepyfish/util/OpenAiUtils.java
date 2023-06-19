@@ -5,14 +5,21 @@ import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.edit.EditRequest;
+import com.theokanning.openai.edit.EditResult;
+import com.theokanning.openai.embedding.Embedding;
+import com.theokanning.openai.embedding.EmbeddingRequest;
+import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
+import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.enums.edit.EditModelEnum;
+import io.github.asleepyfish.enums.embedding.EmbeddingModelEnum;
+import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
-import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.service.OpenAiProxyService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,13 +146,14 @@ public class OpenAiUtils {
     }
 
     public static List<String> createImage(String prompt, String user) {
-        return createImage(CreateImageRequest.builder()
-                .prompt(prompt)
-                .user(user)
-                .build());
+        return openAiProxyService.createImages(prompt, user);
     }
 
-    public static List<String> createImage(CreateImageRequest createImageRequest) {
+    public static List<String> createImages(String prompt, String user, ImageResponseFormatEnum responseFormat) {
+        return openAiProxyService.createImages(prompt, user, responseFormat);
+    }
+
+    public static ImageResult createImage(CreateImageRequest createImageRequest) {
         return openAiProxyService.createImages(createImageRequest);
     }
 
@@ -241,7 +249,7 @@ public class OpenAiUtils {
     }
 
     public static String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
-        return openAiProxyService.edit(instruction, instruction, temperature, topP, editModelEnum);
+        return openAiProxyService.edit(input, instruction, temperature, topP, editModelEnum);
     }
 
     /**
@@ -250,8 +258,39 @@ public class OpenAiUtils {
      * @param editRequest editRequest
      * @return results
      */
-    public static List<String> edit(EditRequest editRequest) {
+    public static EditResult edit(EditRequest editRequest) {
         return openAiProxyService.edit(editRequest);
+    }
+
+    /**
+     * embeddings
+     *
+     * @param text text
+     * @return results
+     */
+    public static List<Embedding> embeddings(String text) {
+        return openAiProxyService.embeddings(text);
+    }
+
+    /**
+     * embeddings
+     *
+     * @param text               text
+     * @param embeddingModelEnum embeddingModelEnum
+     * @return results
+     */
+    public static List<Embedding> embeddings(String text, EmbeddingModelEnum embeddingModelEnum) {
+        return openAiProxyService.embeddings(text, embeddingModelEnum);
+    }
+
+    /**
+     * embeddings
+     *
+     * @param embeddingRequest embeddingRequest
+     * @return results
+     */
+    public static EmbeddingResult embeddings(EmbeddingRequest embeddingRequest) {
+        return openAiProxyService.embeddings(embeddingRequest);
     }
 
     public static void forceClearCache(String cacheName) {

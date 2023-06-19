@@ -9,14 +9,15 @@ import com.google.common.collect.Lists;
 import com.theokanning.openai.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
-import com.theokanning.openai.completion.chat.ChatCompletionChoice;
-import com.theokanning.openai.completion.chat.ChatCompletionChunk;
-import com.theokanning.openai.completion.chat.ChatCompletionRequest;
-import com.theokanning.openai.completion.chat.ChatMessage;
-import com.theokanning.openai.edit.EditChoice;
+import com.theokanning.openai.completion.chat.*;
 import com.theokanning.openai.edit.EditRequest;
+import com.theokanning.openai.edit.EditResult;
+import com.theokanning.openai.embedding.Embedding;
+import com.theokanning.openai.embedding.EmbeddingRequest;
+import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
+import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.billing.Billing;
@@ -24,6 +25,7 @@ import io.github.asleepyfish.entity.billing.Subscription;
 import io.github.asleepyfish.enums.chat.FinishReasonEnum;
 import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.enums.edit.EditModelEnum;
+import io.github.asleepyfish.enums.embedding.EmbeddingModelEnum;
 import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
 import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
@@ -350,20 +352,29 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     public List<String> createImages(String prompt, String user) {
-        return createImages(CreateImageRequest.builder()
-                .prompt(prompt)
-                .user(user)
-                .build());
+        return createImages(prompt, user, ImageResponseFormatEnum.URL);
     }
 
-    public List<String> createImages(CreateImageRequest createImageRequest) {
-        List<Image> imageList = new ArrayList<>();
+    public List<String> createImages(String prompt, String user, ImageResponseFormatEnum responseFormat) {
+        ImageResult imageResult = createImages(CreateImageRequest.builder()
+                .prompt(prompt)
+                .user(user)
+                .responseFormat(responseFormat.getResponseFormat())
+                .build());
+        String format = responseFormat.getResponseFormat();
+        return imageResult.getData().stream().map(image -> format == null ||
+                ImageResponseFormatEnum.URL.getResponseFormat().equals(format) ?
+                image.getUrl() : image.getB64Json()).collect(Collectors.toList());
+    }
+
+    public ImageResult createImages(CreateImageRequest createImageRequest) {
+        ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 if (i > 0) {
                     randomSleep();
                 }
-                imageList = super.createImage(createImageRequest).getData();
+                imageResult = super.createImage(createImageRequest);
                 break;
             } catch (Exception e) {
                 LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -373,11 +384,7 @@ public class OpenAiProxyService extends OpenAiService {
                 }
             }
         }
-        String responseFormat = createImageRequest.getResponseFormat();
-        // default response_format is url
-        return imageList.stream().map(image -> responseFormat == null ||
-                ImageResponseFormatEnum.URL.getResponseFormat().equals(responseFormat) ?
-                image.getUrl() : image.getB64Json()).collect(Collectors.toList());
+        return imageResult;
     }
 
     public void downloadImage(String prompt, HttpServletResponse response) {
@@ -405,7 +412,8 @@ public class OpenAiProxyService extends OpenAiService {
         if (!ImageResponseFormatEnum.B64_JSON.getResponseFormat().equals(createImageRequest.getResponseFormat())) {
             throw new ChatGPTException(ChatGPTErrorEnum.ERROR_RESPONSE_FORMAT);
         }
-        List<String> imageList = createImages(createImageRequest);
+        List<String> imageList = createImages(createImageRequest).getData().stream()
+                .map(Image::getB64Json).collect(Collectors.toList());
         try (OutputStream os = response.getOutputStream()) {
             if (imageList.size() == 1) {
                 response.setContentType("image/png");
@@ -552,13 +560,16 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     public String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
-        return edit(EditRequest.builder()
+        EditResult editResult = edit(EditRequest.builder()
                 .model(editModelEnum.getModelName())
                 .input(input)
                 .instruction(instruction)
                 .temperature(temperature)
                 .topP(topP)
-                .build()).get(0);
+                .build());
+        List<String> results = Lists.newArrayList();
+        editResult.getChoices().forEach(choice -> results.add(choice.getText()));
+        return results.get(0);
     }
 
     /**
@@ -567,14 +578,14 @@ public class OpenAiProxyService extends OpenAiService {
      * @param editRequest editRequest
      * @return results
      */
-    public List<String> edit(EditRequest editRequest) {
-        List<EditChoice> choices = Lists.newArrayList();
+    public EditResult edit(EditRequest editRequest) {
+        EditResult editResult = new EditResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 if (i > 0) {
                     randomSleep();
                 }
-                choices = super.createEdit(editRequest).getChoices();
+                editResult = super.createEdit(editRequest);
                 break;
             } catch (Exception e) {
                 LOG.error("edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -584,9 +595,56 @@ public class OpenAiProxyService extends OpenAiService {
                 }
             }
         }
-        List<String> results = Lists.newArrayList();
-        choices.forEach(choice -> results.add(choice.getText()));
-        return results;
+        return editResult;
+    }
+
+    /**
+     * embeddings
+     *
+     * @param input input
+     * @return results
+     */
+    public List<Embedding> embeddings(String input) {
+        return embeddings(input, EmbeddingModelEnum.TEXT_EMBEDDING_ADA_002);
+    }
+
+    /**
+     * embeddings
+     *
+     * @param input              input
+     * @param embeddingModelEnum embeddingModelEnum
+     * @return results
+     */
+    public List<Embedding> embeddings(String input, EmbeddingModelEnum embeddingModelEnum) {
+        return embeddings(EmbeddingRequest.builder()
+                .input(Collections.singletonList(input))
+                .model(embeddingModelEnum.getModelName())
+                .build()).getData();
+    }
+
+    /**
+     * edit
+     *
+     * @param embeddingRequest embeddingRequest
+     * @return results
+     */
+    public EmbeddingResult embeddings(EmbeddingRequest embeddingRequest) {
+        EmbeddingResult embeddingResult = new EmbeddingResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                embeddingResult = super.createEmbeddings(embeddingRequest);
+            } catch (Exception e) {
+                LOG.error("embeddings failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.EMBEDDINGS_ERROR, e.getMessage());
+                }
+            }
+        }
+        return embeddingResult;
     }
 
     public void forceClearCache(String cacheName) {

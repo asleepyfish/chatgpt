@@ -44,7 +44,12 @@ public enum ChatGPTErrorEnum {
     /**
      * EDIT_ERROR
      */
-    EDIT_ERROR("10007", "edit error, reason is %s.");
+    EDIT_ERROR("10007", "edit error, reason is %s."),
+
+    /**
+     * EMBEDDINGS_ERROR
+     */
+    EMBEDDINGS_ERROR("10008", "embeddings error, reason is %s.");
 
 
     private final String errorCode;
