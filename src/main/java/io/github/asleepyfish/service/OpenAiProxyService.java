@@ -22,8 +22,12 @@ import com.theokanning.openai.image.Image;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
+import io.github.asleepyfish.entity.audio.TranscriptionRequest;
+import io.github.asleepyfish.entity.audio.TranslationRequest;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
+import io.github.asleepyfish.enums.audio.AudioModelEnum;
+import io.github.asleepyfish.enums.audio.AudioResponseFormatEnum;
 import io.github.asleepyfish.enums.chat.FinishReasonEnum;
 import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.enums.edit.EditModelEnum;
@@ -33,10 +37,7 @@ import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
@@ -45,6 +46,7 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -647,6 +649,139 @@ public class OpenAiProxyService extends OpenAiService {
             }
         }
         return embeddingResult;
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
+     * @param file                    file
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public String transcription(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
+        TranscriptionRequest transcriptionRequest = TranscriptionRequest.builder()
+                .file(file).model(AudioModelEnum.WHISPER_1.getModelName())
+                .responseFormat(audioResponseFormatEnum.getFormat()).build();
+        return transcription(transcriptionRequest);
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
+     * @param transcriptionRequest transcriptionRequest
+     * @return text
+     */
+    public String transcription(TranscriptionRequest transcriptionRequest) {
+        if (transcriptionRequest.getModel() == null) {
+            transcriptionRequest.setModel(AudioModelEnum.WHISPER_1.getModelName());
+        }
+        // Create Request Body
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("model", transcriptionRequest.getModel())
+                .addFormDataPart("response_format", transcriptionRequest.getResponseFormat())
+                .addFormDataPart("file", transcriptionRequest.getFile().getName(),
+                        RequestBody.Companion.create(transcriptionRequest.getFile(), MediaType.parse("application/octet-stream")));
+        if (transcriptionRequest.getPrompt() != null) {
+            builder.addFormDataPart("prompt", transcriptionRequest.getPrompt());
+        }
+        if (transcriptionRequest.getResponseFormat() != null) {
+            builder.addFormDataPart("response_format", transcriptionRequest.getResponseFormat());
+        }
+        if (transcriptionRequest.getTemperature() != null) {
+            builder.addFormDataPart("temperature", String.valueOf(transcriptionRequest.getTemperature()));
+        }
+        if (transcriptionRequest.getLanguage() != null) {
+            builder.addFormDataPart("language", transcriptionRequest.getLanguage());
+        }
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+                .post(requestBody)
+                .url(BASE_URL + "/v1/audio/transcriptions")
+                .build();
+        String text = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try (Response response = client.newCall(request).execute()) {
+                if (i > 0) {
+                    randomSleep();
+                }
+                text = response.body().string();
+                break;
+            } catch (Exception e) {
+                LOG.error("transcription failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.TRANSCRIPTION_ERROR, e.getMessage());
+                }
+            }
+        }
+        return text;
+    }
+
+    /**
+     * Translates audio into English.
+     *
+     * @param file                    file
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public String translation(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
+        TranslationRequest translationRequest = TranslationRequest.builder()
+                .file(file).model(AudioModelEnum.WHISPER_1.getModelName())
+                .responseFormat(audioResponseFormatEnum.getFormat()).build();
+        return translation(translationRequest);
+    }
+
+    /**
+     * Translates audio into English.
+     *
+     * @param translationRequest translationRequest
+     * @return text
+     */
+    public String translation(TranslationRequest translationRequest) {
+        if (translationRequest.getModel() == null) {
+            translationRequest.setModel(AudioModelEnum.WHISPER_1.getModelName());
+        }
+        // Create Request Body
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("model", translationRequest.getModel())
+                .addFormDataPart("response_format", translationRequest.getResponseFormat())
+                .addFormDataPart("file", translationRequest.getFile().getName(),
+                        RequestBody.Companion.create(translationRequest.getFile(), MediaType.parse("application/octet-stream")));
+        if (translationRequest.getPrompt() != null) {
+            builder.addFormDataPart("prompt", translationRequest.getPrompt());
+        }
+        if (translationRequest.getResponseFormat() != null) {
+            builder.addFormDataPart("response_format", translationRequest.getResponseFormat());
+        }
+        if (translationRequest.getTemperature() != null) {
+            builder.addFormDataPart("temperature", String.valueOf(translationRequest.getTemperature()));
+        }
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+                .post(requestBody)
+                .url(BASE_URL + "/v1/audio/translations")
+                .build();
+        String text = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try (Response response = client.newCall(request).execute()) {
+                if (i > 0) {
+                    randomSleep();
+                }
+                text = response.body().string();
+                break;
+            } catch (Exception e) {
+                LOG.error("translation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.TRANSLATION_ERROR, e.getMessage());
+                }
+            }
+        }
+        return text;
     }
 
     public void forceClearCache(String cacheName) {

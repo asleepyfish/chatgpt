@@ -49,7 +49,17 @@ public enum ChatGPTErrorEnum {
     /**
      * EMBEDDINGS_ERROR
      */
-    EMBEDDINGS_ERROR("10008", "embeddings error, reason is %s.");
+    EMBEDDINGS_ERROR("10008", "embeddings error, reason is %s."),
+
+    /**
+     * TRANSCRIPTION_ERROR
+     */
+    TRANSCRIPTION_ERROR("10009", "transcription error, reason is %s."),
+
+    /**
+     * TRANSLATION_ERROR
+     */
+    TRANSLATION_ERROR("10010", "translation error, reason is %s.");
 
 
     private final String errorCode;

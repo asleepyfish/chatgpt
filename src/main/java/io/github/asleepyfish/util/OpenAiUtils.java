@@ -11,8 +11,11 @@ import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
+import io.github.asleepyfish.entity.audio.TranscriptionRequest;
+import io.github.asleepyfish.entity.audio.TranslationRequest;
 import io.github.asleepyfish.entity.billing.Billing;
 import io.github.asleepyfish.entity.billing.Subscription;
+import io.github.asleepyfish.enums.audio.AudioResponseFormatEnum;
 import io.github.asleepyfish.enums.chat.RoleEnum;
 import io.github.asleepyfish.enums.edit.EditModelEnum;
 import io.github.asleepyfish.enums.embedding.EmbeddingModelEnum;
@@ -24,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -290,6 +294,48 @@ public class OpenAiUtils {
      */
     public static EmbeddingResult embeddings(EmbeddingRequest embeddingRequest) {
         return openAiProxyService.embeddings(embeddingRequest);
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
+     * @param file                    file
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public static String transcription(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
+        return openAiProxyService.transcription(file, audioResponseFormatEnum);
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
+     * @param transcriptionRequest transcriptionRequest
+     * @return text
+     */
+    public static String transcription(TranscriptionRequest transcriptionRequest) {
+        return openAiProxyService.transcription(transcriptionRequest);
+    }
+
+    /**
+     * Translates audio into English.
+     *
+     * @param file                    file
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public static String translation(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
+        return openAiProxyService.translation(file, audioResponseFormatEnum);
+    }
+
+    /**
+     * Translates audio into English.
+     *
+     * @param translationRequest translationRequest
+     * @return text
+     */
+    public static String translation(TranslationRequest translationRequest) {
+        return openAiProxyService.translation(translationRequest);
     }
 
     public static void forceClearCache(String cacheName) {
