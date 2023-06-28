@@ -17,6 +17,7 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
+import com.theokanning.openai.image.CreateImageEditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.Image;
 import com.theokanning.openai.image.ImageResult;
@@ -782,6 +783,62 @@ public class OpenAiProxyService extends OpenAiService {
             }
         }
         return text;
+    }
+
+    /**
+     * create Image Edit
+     *
+     * @param createImageRequest createImageRequest
+     * @param imagePath          imagePath
+     * @param maskPath           maskPath
+     * @return imageResult
+     */
+    public ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, String imagePath, String maskPath) {
+        ImageResult imageResult = new ImageResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                imageResult = super.createImageEdit(createImageEditRequest, imagePath, maskPath);
+                break;
+            } catch (Exception e) {
+                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
+                }
+            }
+        }
+        return imageResult;
+    }
+
+    /**
+     * create Image Edit
+     *
+     * @param createImageRequest createImageRequest
+     * @param image              image
+     * @param mask               mask
+     * @return imageResult
+     */
+    public ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
+        ImageResult imageResult = new ImageResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                imageResult = super.createImageEdit(createImageEditRequest, image, mask);
+                break;
+            } catch (Exception e) {
+                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
+                }
+            }
+        }
+        return imageResult;
     }
 
     public void forceClearCache(String cacheName) {

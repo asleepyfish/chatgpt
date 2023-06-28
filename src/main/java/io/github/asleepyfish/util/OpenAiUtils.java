@@ -8,6 +8,7 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
+import com.theokanning.openai.image.CreateImageEditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
@@ -336,6 +337,14 @@ public class OpenAiUtils {
      */
     public static String translation(TranslationRequest translationRequest) {
         return openAiProxyService.translation(translationRequest);
+    }
+
+    public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, String imagePath, String maskPath) {
+        return openAiProxyService.createImageEdit(createImageEditRequest, imagePath, maskPath);
+    }
+
+    public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
+        return openAiProxyService.createImageEdit(createImageEditRequest, image, mask);
     }
 
     public static void forceClearCache(String cacheName) {
