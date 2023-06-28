@@ -339,10 +339,26 @@ public class OpenAiUtils {
         return openAiProxyService.translation(translationRequest);
     }
 
+    /**
+     * create Image Edit
+     *
+     * @param createImageEditRequest createImageEditRequest
+     * @param imagePath          imagePath
+     * @param maskPath           maskPath
+     * @return imageResult
+     */
     public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, String imagePath, String maskPath) {
         return openAiProxyService.createImageEdit(createImageEditRequest, imagePath, maskPath);
     }
 
+    /**
+     * create Image Edit
+     *
+     * @param createImageEditRequest createImageEditRequest
+     * @param image              image
+     * @param mask               mask
+     * @return imageResult
+     */
     public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
         return openAiProxyService.createImageEdit(createImageEditRequest, image, mask);
     }

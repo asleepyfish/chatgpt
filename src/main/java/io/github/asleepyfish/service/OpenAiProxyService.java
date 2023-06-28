@@ -788,7 +788,7 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * create Image Edit
      *
-     * @param createImageRequest createImageRequest
+     * @param createImageEditRequest createImageEditRequest
      * @param imagePath          imagePath
      * @param maskPath           maskPath
      * @return imageResult
@@ -816,7 +816,7 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * create Image Edit
      *
-     * @param createImageRequest createImageRequest
+     * @param createImageEditRequest createImageEditRequest
      * @param image              image
      * @param mask               mask
      * @return imageResult
