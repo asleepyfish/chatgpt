@@ -3,6 +3,7 @@ package io.github.asleepyfish.entity.audio;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 
 import java.io.File;
 
@@ -25,6 +26,7 @@ public class TranslationRequest {
      * model
      * ID of the model to use. Only whisper-1 is currently available.
      */
+    @NonNull
     private String model;
 
     /**

@@ -59,7 +59,17 @@ public enum ChatGPTErrorEnum {
     /**
      * TRANSLATION_ERROR
      */
-    TRANSLATION_ERROR("10010", "translation error, reason is %s.");
+    TRANSLATION_ERROR("10010", "translation error, reason is %s."),
+
+    /**
+     * CREATE_IMAGE_EDIT_ERROR
+     */
+    CREATE_IMAGE_EDIT_ERROR("10011", "create image edit error, reason is %s."),
+
+    /**
+     * CREATE_IMAGE_VARIATION_ERROR
+     */
+    CREATE_IMAGE_VARIATION_ERROR("10012", "create image variation error, reason is %s.");
 
 
     private final String errorCode;

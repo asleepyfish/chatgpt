@@ -10,6 +10,7 @@ import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
 import com.theokanning.openai.image.CreateImageEditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.image.CreateImageVariationRequest;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
@@ -300,6 +301,17 @@ public class OpenAiUtils {
     /**
      * Transcribes audio into the input language.
      *
+     * @param filePath                filePath
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public static String transcription(String filePath, AudioResponseFormatEnum audioResponseFormatEnum) {
+        return openAiProxyService.transcription(filePath, audioResponseFormatEnum);
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
      * @param file                    file
      * @param audioResponseFormatEnum audioResponseFormatEnum
      * @return text
@@ -316,6 +328,17 @@ public class OpenAiUtils {
      */
     public static String transcription(TranscriptionRequest transcriptionRequest) {
         return openAiProxyService.transcription(transcriptionRequest);
+    }
+
+    /**
+     * Translates audio into English.
+     *
+     * @param filePath                filePath
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public static String translation(String filePath, AudioResponseFormatEnum audioResponseFormatEnum) {
+        return openAiProxyService.translation(filePath, audioResponseFormatEnum);
     }
 
     /**
@@ -343,8 +366,8 @@ public class OpenAiUtils {
      * create Image Edit
      *
      * @param createImageEditRequest createImageEditRequest
-     * @param imagePath          imagePath
-     * @param maskPath           maskPath
+     * @param imagePath              imagePath
+     * @param maskPath               maskPath
      * @return imageResult
      */
     public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, String imagePath, String maskPath) {
@@ -355,12 +378,34 @@ public class OpenAiUtils {
      * create Image Edit
      *
      * @param createImageEditRequest createImageEditRequest
-     * @param image              image
-     * @param mask               mask
+     * @param image                  image
+     * @param mask                   mask
      * @return imageResult
      */
     public static ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
         return openAiProxyService.createImageEdit(createImageEditRequest, image, mask);
+    }
+
+    /**
+     * create Image Edit
+     *
+     * @param createImageVariationRequest createImageVariationRequest
+     * @param imagePath                   imagePath
+     * @return imageResult
+     */
+    public static ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, String imagePath) {
+        return openAiProxyService.createImageVariation(createImageVariationRequest, imagePath);
+    }
+
+    /**
+     * create Image Edit
+     *
+     * @param createImageVariationRequest createImageVariationRequest
+     * @param image                       image
+     * @return imageResult
+     */
+    public static ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, File image) {
+        return openAiProxyService.createImageVariation(createImageVariationRequest, image);
     }
 
     public static void forceClearCache(String cacheName) {

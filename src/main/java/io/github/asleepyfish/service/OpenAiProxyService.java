@@ -6,7 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
-import com.theokanning.openai.OpenAiApi;
+import com.theokanning.openai.client.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
@@ -17,10 +17,8 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
-import com.theokanning.openai.image.CreateImageEditRequest;
-import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.image.*;
 import com.theokanning.openai.image.Image;
-import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
@@ -45,7 +43,10 @@ import retrofit2.Retrofit;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -60,6 +61,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -655,6 +657,18 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * Transcribes audio into the input language.
      *
+     * @param filePath                filePath
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public String transcription(String filePath, AudioResponseFormatEnum audioResponseFormatEnum) {
+        File file = new File(filePath);
+        return transcription(file, audioResponseFormatEnum);
+    }
+
+    /**
+     * Transcribes audio into the input language.
+     *
      * @param file                    file
      * @param audioResponseFormatEnum audioResponseFormatEnum
      * @return text
@@ -673,14 +687,10 @@ public class OpenAiProxyService extends OpenAiService {
      * @return text
      */
     public String transcription(TranscriptionRequest transcriptionRequest) {
-        if (transcriptionRequest.getModel() == null) {
-            transcriptionRequest.setModel(AudioModelEnum.WHISPER_1.getModelName());
-        }
         // Create Request Body
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("model", transcriptionRequest.getModel())
-                .addFormDataPart("response_format", transcriptionRequest.getResponseFormat())
                 .addFormDataPart("file", transcriptionRequest.getFile().getName(),
                         RequestBody.Companion.create(transcriptionRequest.getFile(), MediaType.parse("application/octet-stream")));
         if (transcriptionRequest.getPrompt() != null) {
@@ -723,13 +733,25 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * Translates audio into English.
      *
+     * @param filePath                filePath
+     * @param audioResponseFormatEnum audioResponseFormatEnum
+     * @return text
+     */
+    public String translation(String filePath, AudioResponseFormatEnum audioResponseFormatEnum) {
+        File file = new File(filePath);
+        return translation(file, audioResponseFormatEnum);
+    }
+
+    /**
+     * Translates audio into English.
+     *
      * @param file                    file
      * @param audioResponseFormatEnum audioResponseFormatEnum
      * @return text
      */
     public String translation(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
         TranslationRequest translationRequest = TranslationRequest.builder()
-                .file(file).model(AudioModelEnum.WHISPER_1.getModelName())
+                .file(file)
                 .responseFormat(audioResponseFormatEnum.getFormat()).build();
         return translation(translationRequest);
     }
@@ -741,14 +763,10 @@ public class OpenAiProxyService extends OpenAiService {
      * @return text
      */
     public String translation(TranslationRequest translationRequest) {
-        if (translationRequest.getModel() == null) {
-            translationRequest.setModel(AudioModelEnum.WHISPER_1.getModelName());
-        }
         // Create Request Body
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("model", translationRequest.getModel())
-                .addFormDataPart("response_format", translationRequest.getResponseFormat())
                 .addFormDataPart("file", translationRequest.getFile().getName(),
                         RequestBody.Companion.create(translationRequest.getFile(), MediaType.parse("application/octet-stream")));
         if (translationRequest.getPrompt() != null) {
@@ -789,39 +807,34 @@ public class OpenAiProxyService extends OpenAiService {
      * create Image Edit
      *
      * @param createImageEditRequest createImageEditRequest
-     * @param imagePath          imagePath
-     * @param maskPath           maskPath
+     * @param imagePath              imagePath
+     * @param maskPath               maskPath
      * @return imageResult
      */
     public ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, String imagePath, String maskPath) {
-        ImageResult imageResult = new ImageResult();
-        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try {
-                if (i > 0) {
-                    randomSleep();
-                }
-                imageResult = super.createImageEdit(createImageEditRequest, imagePath, maskPath);
-                break;
-            } catch (Exception e) {
-                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
-                if (i == chatGPTProperties.getRetries() - 1) {
-                    e.printStackTrace();
-                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
-                }
-            }
+        File image = new File(imagePath);
+        File mask = null;
+        if (maskPath != null) {
+            mask = new File(maskPath);
         }
-        return imageResult;
+        return createImageEdit(createImageEditRequest, image, mask);
     }
 
     /**
      * create Image Edit
      *
      * @param createImageEditRequest createImageEditRequest
-     * @param image              image
-     * @param mask               mask
+     * @param image                  image
+     * @param mask                   mask
      * @return imageResult
      */
     public ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
+        try {
+            convertColorFormats(image);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
+
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
@@ -834,7 +847,61 @@ public class OpenAiProxyService extends OpenAiService {
                 LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
-                    throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_EDIT_ERROR, e.getMessage());
+                }
+            }
+        }
+        return imageResult;
+    }
+
+    /**
+     * create Image Edit
+     *
+     * @param createImageVariationRequest createImageVariationRequest
+     * @param imagePath                   imagePath
+     * @return imageResult
+     */
+    public ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, String imagePath) {
+        ImageResult imageResult = new ImageResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                imageResult = super.createImageVariation(createImageVariationRequest, imagePath);
+                break;
+            } catch (Exception e) {
+                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_VARIATION_ERROR, e.getMessage());
+                }
+            }
+        }
+        return imageResult;
+    }
+
+    /**
+     * create Image Variation
+     *
+     * @param createImageVariationRequest createImageVariationRequest
+     * @param image                       image
+     * @return imageResult
+     */
+    public ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, File image) {
+        ImageResult imageResult = new ImageResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                imageResult = super.createImageVariation(createImageVariationRequest, image);
+                break;
+            } catch (Exception e) {
+                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_VARIATION_ERROR, e.getMessage());
                 }
             }
         }
@@ -874,5 +941,44 @@ public class OpenAiProxyService extends OpenAiService {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
             return ImageIO.read(bis);
         }
+    }
+
+    private void convertColorFormats(File image) throws IOException {
+        try {
+            BufferedImage inputImage = ImageIO.read(image);
+
+            // Get the color model of the image
+            ColorModel colorModel = inputImage.getColorModel();
+            // Check the mode of the image
+            ComponentColorModel componentColorModel = (ComponentColorModel) colorModel;
+
+            // Check the pixel format of the image
+            int pixelSize = componentColorModel.getPixelSize();
+            int numComponents = componentColorModel.getNumComponents();
+            boolean isRGBA = pixelSize == 32 && numComponents == 4;
+            boolean isL = pixelSize == 8 && numComponents == 1;
+            boolean isLA = pixelSize == 16 && numComponents == 2;
+
+            if (!isRGBA && !isL && !isLA) {
+                // Create a new RGBA image
+                BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
+                        BufferedImage.TYPE_INT_ARGB);
+
+                // Draw the original image to the new image
+                Graphics2D g2d = outputImage.createGraphics();
+                g2d.drawImage(inputImage, 0, 0, null);
+                g2d.dispose();
+
+                // Save New Image
+                ImageIO.write(outputImage, "png", image);
+
+            } else {
+                // Unsupported color model
+                System.out.println("Unsupported color model.");
+            }
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
+
     }
 }
