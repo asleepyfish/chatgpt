@@ -831,17 +831,49 @@ public class OpenAiProxyService extends OpenAiService {
     public ImageResult createImageEdit(CreateImageEditRequest createImageEditRequest, File image, File mask) {
         try {
             convertColorFormats(image);
+            if (mask != null) {
+                convertColorFormats(mask);
+            }
         } catch (Exception e) {
             LOG.error(e.getMessage());
         }
 
+        // Create Request Body
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("prompt", createImageEditRequest.getPrompt())
+                .addFormDataPart("image", image.getName(),
+                        RequestBody.Companion.create(image, MediaType.parse("application/octet-stream")));
+        if (mask != null) {
+            builder.addFormDataPart("mask", mask.getName(),
+                    RequestBody.Companion.create(mask, MediaType.parse("application/octet-stream")));
+        }
+        if (createImageEditRequest.getN() != null) {
+            builder.addFormDataPart("n", String.valueOf(createImageEditRequest.getN()));
+        }
+        if (createImageEditRequest.getResponseFormat() != null) {
+            builder.addFormDataPart("response_format", createImageEditRequest.getResponseFormat());
+        }
+        if (createImageEditRequest.getSize() != null) {
+            builder.addFormDataPart("size", createImageEditRequest.getSize());
+        }
+        if (createImageEditRequest.getUser() != null) {
+            builder.addFormDataPart("user", createImageEditRequest.getUser());
+        }
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+                .post(requestBody)
+                .url(BASE_URL + "/v1/images/edits")
+                .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try {
+            try (Response response = client.newCall(request).execute()) {
                 if (i > 0) {
                     randomSleep();
                 }
-                imageResult = super.createImageEdit(createImageEditRequest, image, mask);
+                String res = response.body().string();
+                imageResult = JSONObject.parseObject(res, ImageResult.class);
                 break;
             } catch (Exception e) {
                 LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -862,23 +894,8 @@ public class OpenAiProxyService extends OpenAiService {
      * @return imageResult
      */
     public ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, String imagePath) {
-        ImageResult imageResult = new ImageResult();
-        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try {
-                if (i > 0) {
-                    randomSleep();
-                }
-                imageResult = super.createImageVariation(createImageVariationRequest, imagePath);
-                break;
-            } catch (Exception e) {
-                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
-                if (i == chatGPTProperties.getRetries() - 1) {
-                    e.printStackTrace();
-                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_VARIATION_ERROR, e.getMessage());
-                }
-            }
-        }
-        return imageResult;
+        File image = new File(imagePath);
+        return createImageVariation(createImageVariationRequest, image);
     }
 
     /**
@@ -889,13 +906,43 @@ public class OpenAiProxyService extends OpenAiService {
      * @return imageResult
      */
     public ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, File image) {
+        try {
+            convertColorFormats(image);
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
+
+        // Create Request Body
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("image", image.getName(),
+                        RequestBody.Companion.create(image, MediaType.parse("application/octet-stream")));
+        if (createImageVariationRequest.getN() != null) {
+            builder.addFormDataPart("n", String.valueOf(createImageVariationRequest.getN()));
+        }
+        if (createImageVariationRequest.getResponseFormat() != null) {
+            builder.addFormDataPart("response_format", createImageVariationRequest.getResponseFormat());
+        }
+        if (createImageVariationRequest.getSize() != null) {
+            builder.addFormDataPart("size", createImageVariationRequest.getSize());
+        }
+        if (createImageVariationRequest.getUser() != null) {
+            builder.addFormDataPart("user", createImageVariationRequest.getUser());
+        }
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+                .post(requestBody)
+                .url(BASE_URL + "/v1/images/variations")
+                .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try {
+            try (Response response = client.newCall(request).execute()) {
                 if (i > 0) {
                     randomSleep();
                 }
-                imageResult = super.createImageVariation(createImageVariationRequest, image);
+                String res = response.body().string();
+                imageResult = JSONObject.parseObject(res, ImageResult.class);
                 break;
             } catch (Exception e) {
                 LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -943,41 +990,42 @@ public class OpenAiProxyService extends OpenAiService {
         }
     }
 
+    /**
+     * convert color formats
+     *
+     * @param image image
+     * @throws IOException IOException
+     */
     private void convertColorFormats(File image) throws IOException {
-        try {
-            BufferedImage inputImage = ImageIO.read(image);
+        BufferedImage inputImage = ImageIO.read(image);
 
-            // Get the color model of the image
-            ColorModel colorModel = inputImage.getColorModel();
-            // Check the mode of the image
-            ComponentColorModel componentColorModel = (ComponentColorModel) colorModel;
+        // Get the color model of the image
+        ColorModel colorModel = inputImage.getColorModel();
+        // Check the mode of the image
+        ComponentColorModel componentColorModel = (ComponentColorModel) colorModel;
 
-            // Check the pixel format of the image
-            int pixelSize = componentColorModel.getPixelSize();
-            int numComponents = componentColorModel.getNumComponents();
-            boolean isRGBA = pixelSize == 32 && numComponents == 4;
-            boolean isL = pixelSize == 8 && numComponents == 1;
-            boolean isLA = pixelSize == 16 && numComponents == 2;
+        // Check the pixel format of the image
+        int pixelSize = componentColorModel.getPixelSize();
+        int numComponents = componentColorModel.getNumComponents();
+        boolean isRGBA = pixelSize == 32 && numComponents == 4;
+        boolean isL = pixelSize == 8 && numComponents == 1;
+        boolean isLA = pixelSize == 16 && numComponents == 2;
 
-            if (!isRGBA && !isL && !isLA) {
-                // Create a new RGBA image
-                BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
-                        BufferedImage.TYPE_INT_ARGB);
+        if (!isRGBA && !isL && !isLA) {
+            // Create a new RGBA image
+            BufferedImage outputImage = new BufferedImage(inputImage.getWidth(), inputImage.getHeight(),
+                    BufferedImage.TYPE_INT_ARGB);
 
-                // Draw the original image to the new image
-                Graphics2D g2d = outputImage.createGraphics();
-                g2d.drawImage(inputImage, 0, 0, null);
-                g2d.dispose();
+            // Draw the original image to the new image
+            Graphics2D g2d = outputImage.createGraphics();
+            g2d.drawImage(inputImage, 0, 0, null);
+            g2d.dispose();
 
-                // Save New Image
-                ImageIO.write(outputImage, "png", image);
-
-            } else {
-                // Unsupported color model
-                System.out.println("Unsupported color model.");
-            }
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
+            // Save New Image
+            ImageIO.write(outputImage, "png", image);
+        } else {
+            // Unsupported color model
+            System.out.println("Unsupported color model.");
         }
 
     }
