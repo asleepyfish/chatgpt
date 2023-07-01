@@ -751,7 +751,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public String translation(File file, AudioResponseFormatEnum audioResponseFormatEnum) {
         TranslationRequest translationRequest = TranslationRequest.builder()
-                .file(file)
+                .file(file).model(AudioModelEnum.WHISPER_1.getModelName())
                 .responseFormat(audioResponseFormatEnum.getFormat()).build();
         return translation(translationRequest);
     }
@@ -1023,9 +1023,6 @@ public class OpenAiProxyService extends OpenAiService {
 
             // Save New Image
             ImageIO.write(outputImage, "png", image);
-        } else {
-            // Unsupported color model
-            System.out.println("Unsupported color model.");
         }
 
     }
