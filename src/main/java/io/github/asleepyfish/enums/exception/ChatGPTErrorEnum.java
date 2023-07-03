@@ -69,7 +69,67 @@ public enum ChatGPTErrorEnum {
     /**
      * CREATE_IMAGE_VARIATION_ERROR
      */
-    CREATE_IMAGE_VARIATION_ERROR("10012", "create image variation error, reason is %s.");
+    CREATE_IMAGE_VARIATION_ERROR("10012", "create image variation error, reason is %s."),
+
+    /**
+     * LIST_FILES_ERROR
+     */
+    LIST_FILES_ERROR("10013", "list files error, reason is %s."),
+
+    /**
+     * UPLOAD_FILE_ERROR
+     */
+    UPLOAD_FILE_ERROR("10014", "upload file error, reason is %s."),
+
+    /**
+     * DELETE_FILE_ERROR
+     */
+    DELETE_FILE_ERROR("10015", "delete file error, reason is %s."),
+
+    /**
+     * RETRIEVE_FILE_ERROR
+     */
+    RETRIEVE_FILE_ERROR("10016", "retrieve file error, reason is %s."),
+
+    /**
+     * RETRIEVE_FILE_CONTENT_ERROR
+     */
+    RETRIEVE_FILE_CONTENT_ERROR("10017", "retrieve file content error, reason is %s."),
+
+    /**
+     * CREATE_FINE_TUNE_ERROR
+     */
+    CREATE_FINE_TUNE_ERROR("10018", "create fine tune error, reason is %s."),
+
+    /**
+     * LIST_FINE_TUNES_ERROR
+     */
+    LIST_FINE_TUNES_ERROR("10019", "list fine tunes error, reason is %s."),
+
+    /**
+     * CREATE_FINE_TUNE_COMPLETION_ERROR
+     */
+    CREATE_FINE_TUNE_COMPLETION_ERROR("10020", "create fine tune completion error, reason is %s."),
+
+    /**
+     * RETRIEVE_FINE_TUNE_ERROR
+     */
+    RETRIEVE_FINE_TUNE_ERROR("10021", "retrieve fine tune error, reason is %s."),
+
+    /**
+     * CANCEL_FINE_TUNE_ERROR
+     */
+    CANCEL_FINE_TUNE_ERROR("10022", "cancel fine tune error, reason is %s."),
+
+    /**
+     * LIST_FINE_TUNE_EVENTS_ERROR
+     */
+    LIST_FINE_TUNE_EVENTS_ERROR("10023", "list fine tune events error, reason is %s."),
+
+    /**
+     * DELETE_FINE_TUNE_ERROR
+     */
+    DELETE_FINE_TUNE_ERROR("10024", "delete fine tune error, reason is %s.");
 
 
     private final String errorCode;

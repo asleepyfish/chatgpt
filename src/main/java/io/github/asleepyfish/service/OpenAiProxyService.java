@@ -6,9 +6,11 @@ import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import com.theokanning.openai.DeleteResult;
 import com.theokanning.openai.client.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.completion.CompletionResult;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionChunk;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
@@ -17,8 +19,11 @@ import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
-import com.theokanning.openai.image.*;
+import com.theokanning.openai.finetune.FineTuneEvent;
+import com.theokanning.openai.finetune.FineTuneRequest;
+import com.theokanning.openai.finetune.FineTuneResult;
 import com.theokanning.openai.image.Image;
+import com.theokanning.openai.image.*;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
@@ -36,6 +41,7 @@ import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
+import lombok.NonNull;
 import okhttp3.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,7 +51,6 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -60,8 +65,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -876,7 +881,7 @@ public class OpenAiProxyService extends OpenAiService {
                 imageResult = JSONObject.parseObject(res, ImageResult.class);
                 break;
             } catch (Exception e) {
-                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                LOG.error("create image edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_EDIT_ERROR, e.getMessage());
@@ -945,7 +950,7 @@ public class OpenAiProxyService extends OpenAiService {
                 imageResult = JSONObject.parseObject(res, ImageResult.class);
                 break;
             } catch (Exception e) {
-                LOG.error("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                LOG.error("create image variation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_VARIATION_ERROR, e.getMessage());
@@ -954,6 +959,286 @@ public class OpenAiProxyService extends OpenAiService {
         }
         return imageResult;
     }
+
+    /**
+     * list files
+     *
+     * @return files
+     */
+    public List<com.theokanning.openai.file.File> listFiles() {
+        List<com.theokanning.openai.file.File> files = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                files = super.listFiles();
+                break;
+            } catch (Exception e) {
+                LOG.error("list files failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.LIST_FILES_ERROR, e.getMessage());
+                }
+            }
+        }
+        return files;
+    }
+
+    /**
+     * upload file
+     *
+     * @param purpose  purpose
+     * @param filepath filepath
+     * @return file
+     */
+    public com.theokanning.openai.file.File uploadFile(@NonNull String purpose, @NonNull String filepath) {
+        com.theokanning.openai.file.File file = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                file = super.uploadFile(purpose, filepath);
+                break;
+            } catch (Exception e) {
+                LOG.error("upload file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.UPLOAD_FILE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return file;
+    }
+
+    /**
+     * delete file
+     *
+     * @param fileId fileId
+     * @return deleteResult
+     */
+    public DeleteResult deleteFile(@NonNull String fileId) {
+        DeleteResult deleteResult = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                deleteResult = super.deleteFile(fileId);
+                break;
+            } catch (Exception e) {
+                LOG.error("delete file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.DELETE_FILE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return deleteResult;
+    }
+
+    /**
+     * retrieve file
+     *
+     * @param fileId fileId
+     * @return file
+     */
+    public com.theokanning.openai.file.File retrieveFile(@NonNull String fileId) {
+        com.theokanning.openai.file.File file = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                file = super.retrieveFile(fileId);
+                break;
+            } catch (Exception e) {
+                LOG.error("retrieve file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FILE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return file;
+    }
+
+    /**
+     * retrieve file content
+     *
+     * @param fileId fileId
+     * @return file content
+     */
+    public String retrieveFileContent(@NonNull String fileId) {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/v1/files/{" + fileId + "}/content")
+                .build();
+        String fileContent = null;
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try (Response response = client.newCall(request).execute()) {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fileContent = response.body().string();
+                break;
+            } catch (Exception e) {
+                LOG.error("retrieve file content failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FILE_CONTENT_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fileContent;
+    }
+
+    /**
+     * list fine tunes
+     *
+     * @param request request
+     * @return fineTunes
+     */
+    public FineTuneResult createFineTune(FineTuneRequest request) {
+        FineTuneResult fineTuneResult = new FineTuneResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fineTuneResult = super.createFineTune(request);
+                break;
+            } catch (Exception e) {
+                LOG.error("create fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_FINE_TUNE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fineTuneResult;
+    }
+
+    public CompletionResult createFineTuneCompletion(CompletionRequest request) {
+        CompletionResult completionResult = new CompletionResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                completionResult = super.createFineTuneCompletion(request);
+                break;
+            } catch (Exception e) {
+                LOG.error("create fine tune completion failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_FINE_TUNE_COMPLETION_ERROR, e.getMessage());
+                }
+            }
+        }
+        return completionResult;
+    }
+
+    public List<FineTuneResult> listFineTunes() {
+        List<FineTuneResult> fineTunes = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fineTunes = super.listFineTunes();
+                break;
+            } catch (Exception e) {
+                LOG.error("list fine tunes failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.LIST_FINE_TUNES_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fineTunes;
+    }
+
+    public FineTuneResult retrieveFineTune(String fineTuneId) {
+        FineTuneResult fineTuneResult = new FineTuneResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fineTuneResult = super.retrieveFineTune(fineTuneId);
+                break;
+            } catch (Exception e) {
+                LOG.error("retrieve fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FINE_TUNE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fineTuneResult;
+    }
+
+    public FineTuneResult cancelFineTune(String fineTuneId) {
+        FineTuneResult fineTuneResult = new FineTuneResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fineTuneResult = super.cancelFineTune(fineTuneId);
+                break;
+            } catch (Exception e) {
+                LOG.error("cancel fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CANCEL_FINE_TUNE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fineTuneResult;
+    }
+
+    public List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
+        List<FineTuneEvent> fineTuneEvents = new ArrayList<>();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                fineTuneEvents = super.listFineTuneEvents(fineTuneId);
+                break;
+            } catch (Exception e) {
+                LOG.error("list fine tune events failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.LIST_FINE_TUNE_EVENTS_ERROR, e.getMessage());
+                }
+            }
+        }
+        return fineTuneEvents;
+    }
+
+    public DeleteResult deleteFineTune(String fineTuneId) {
+        DeleteResult deleteResult = new DeleteResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                deleteResult = super.deleteFineTune(fineTuneId);
+                break;
+            } catch (Exception e) {
+                LOG.error("delete fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.DELETE_FINE_TUNE_ERROR, e.getMessage());
+                }
+            }
+        }
+        return deleteResult;
+    }
+
 
     public void forceClearCache(String cacheName) {
         this.cache.invalidate(cacheName);
@@ -1000,9 +1285,7 @@ public class OpenAiProxyService extends OpenAiService {
         BufferedImage inputImage = ImageIO.read(image);
 
         // Get the color model of the image
-        ColorModel colorModel = inputImage.getColorModel();
-        // Check the mode of the image
-        ComponentColorModel componentColorModel = (ComponentColorModel) colorModel;
+        ComponentColorModel componentColorModel = (ComponentColorModel) inputImage.getColorModel();
 
         // Check the pixel format of the image
         int pixelSize = componentColorModel.getPixelSize();

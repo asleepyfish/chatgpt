@@ -1,13 +1,18 @@
 package io.github.asleepyfish.util;
 
 import com.google.common.cache.Cache;
+import com.theokanning.openai.DeleteResult;
 import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.completion.CompletionResult;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
 import com.theokanning.openai.embedding.EmbeddingResult;
+import com.theokanning.openai.finetune.FineTuneEvent;
+import com.theokanning.openai.finetune.FineTuneRequest;
+import com.theokanning.openai.finetune.FineTuneResult;
 import com.theokanning.openai.image.CreateImageEditRequest;
 import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.CreateImageVariationRequest;
@@ -25,6 +30,7 @@ import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.service.OpenAiProxyService;
+import lombok.NonNull;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -406,6 +412,84 @@ public class OpenAiUtils {
      */
     public static ImageResult createImageVariation(CreateImageVariationRequest createImageVariationRequest, File image) {
         return openAiProxyService.createImageVariation(createImageVariationRequest, image);
+    }
+
+    /**
+     * listFiles
+     *
+     * @return files
+     */
+    public static List<com.theokanning.openai.file.File> listFiles() {
+        return openAiProxyService.listFiles();
+    }
+
+    /**
+     * uploadFile
+     *
+     * @param purpose  purpose
+     * @param filepath filepath
+     * @return file
+     */
+    public static com.theokanning.openai.file.File uploadFile(@NonNull String purpose, @NonNull String filepath) {
+        return openAiProxyService.uploadFile(purpose, filepath);
+    }
+
+    /**
+     * deleteFile
+     *
+     * @param fileId fileId
+     * @return DeleteResult
+     */
+    public static DeleteResult deleteFile(@NonNull String fileId) {
+        return openAiProxyService.deleteFile(fileId);
+    }
+
+    /**
+     * retrieveFile
+     *
+     * @param fileId fileId
+     * @return file
+     */
+    public static com.theokanning.openai.file.File retrieveFile(@NonNull String fileId) {
+        return openAiProxyService.retrieveFile(fileId);
+    }
+
+    /**
+     * retrieveFileContent
+     *
+     * @param fileId fileId
+     * @return file
+     */
+    public static String retrieveFileContent(@NonNull String fileId) {
+        return openAiProxyService.retrieveFileContent(fileId);
+    }
+
+    public static FineTuneResult createFineTune(FineTuneRequest request) {
+        return openAiProxyService.createFineTune(request);
+    }
+
+    public static CompletionResult createFineTuneCompletion(CompletionRequest request) {
+        return openAiProxyService.createFineTuneCompletion(request);
+    }
+
+    public static List<FineTuneResult> listFineTunes() {
+        return openAiProxyService.listFineTunes();
+    }
+
+    public static FineTuneResult retrieveFineTune(String fineTuneId) {
+        return openAiProxyService.retrieveFineTune(fineTuneId);
+    }
+
+    public static FineTuneResult cancelFineTune(String fineTuneId) {
+        return openAiProxyService.cancelFineTune(fineTuneId);
+    }
+
+    public static List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
+        return openAiProxyService.listFineTuneEvents(fineTuneId);
+    }
+
+    public static DeleteResult deleteFineTune(String fineTuneId) {
+        return openAiProxyService.deleteFineTune(fineTuneId);
     }
 
     public static void forceClearCache(String cacheName) {
