@@ -18,6 +18,8 @@ import com.theokanning.openai.image.CreateImageRequest;
 import com.theokanning.openai.image.CreateImageVariationRequest;
 import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
+import com.theokanning.openai.moderation.ModerationRequest;
+import com.theokanning.openai.moderation.ModerationResult;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
 import io.github.asleepyfish.entity.audio.TranslationRequest;
 import io.github.asleepyfish.entity.billing.Billing;
@@ -464,32 +466,83 @@ public class OpenAiUtils {
         return openAiProxyService.retrieveFileContent(fileId);
     }
 
-    public static FineTuneResult createFineTune(FineTuneRequest request) {
-        return openAiProxyService.createFineTune(request);
+    /**
+     * createFineTune
+     *
+     * @param FineTuneRequest FineTuneRequest
+     * @return FineTuneResult
+     */
+    public static FineTuneResult createFineTune(FineTuneRequest FineTuneRequest) {
+        return openAiProxyService.createFineTune(FineTuneRequest);
     }
 
-    public static CompletionResult createFineTuneCompletion(CompletionRequest request) {
-        return openAiProxyService.createFineTuneCompletion(request);
+    /**
+     * createFineTuneCompletion
+     *
+     * @param completionRequest completionRequest
+     * @return CompletionResult
+     */
+    public static CompletionResult createFineTuneCompletion(CompletionRequest completionRequest) {
+        return openAiProxyService.createFineTuneCompletion(completionRequest);
     }
 
+    /**
+     * listFineTunes
+     *
+     * @return List
+     */
     public static List<FineTuneResult> listFineTunes() {
         return openAiProxyService.listFineTunes();
     }
 
+    /**
+     * retrieveFineTune
+     *
+     * @param fineTuneId fineTuneId
+     * @return FineTuneResult
+     */
     public static FineTuneResult retrieveFineTune(String fineTuneId) {
         return openAiProxyService.retrieveFineTune(fineTuneId);
     }
 
+    /**
+     * cancelFineTune
+     *
+     * @param fineTuneId fineTuneId
+     * @return FineTuneResult
+     */
     public static FineTuneResult cancelFineTune(String fineTuneId) {
         return openAiProxyService.cancelFineTune(fineTuneId);
     }
 
+    /**
+     * listFineTuneEvents
+     *
+     * @param fineTuneId fineTuneId
+     * @return List
+     */
     public static List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
         return openAiProxyService.listFineTuneEvents(fineTuneId);
     }
 
+    /**
+     * deleteFineTune
+     *
+     * @param fineTuneId fineTuneId
+     * @return DeleteResult
+     */
     public static DeleteResult deleteFineTune(String fineTuneId) {
         return openAiProxyService.deleteFineTune(fineTuneId);
+    }
+
+    /**
+     * createModeration
+     *
+     * @param moderationRequest moderationRequest
+     * @return ModerationResult
+     */
+    public static ModerationResult createModeration(ModerationRequest moderationRequest) {
+        return openAiProxyService.createModeration(moderationRequest);
     }
 
     public static void forceClearCache(String cacheName) {

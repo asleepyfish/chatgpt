@@ -129,7 +129,12 @@ public enum ChatGPTErrorEnum {
     /**
      * DELETE_FINE_TUNE_ERROR
      */
-    DELETE_FINE_TUNE_ERROR("10024", "delete fine tune error, reason is %s.");
+    DELETE_FINE_TUNE_ERROR("10024", "delete fine tune error, reason is %s."),
+
+    /**
+     * CREATE_MODERATION_ERROR
+     */
+    CREATE_MODERATION_ERROR("10025", "create moderation error, reason is %s.");
 
 
     private final String errorCode;

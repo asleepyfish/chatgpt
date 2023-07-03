@@ -24,6 +24,8 @@ import com.theokanning.openai.finetune.FineTuneRequest;
 import com.theokanning.openai.finetune.FineTuneResult;
 import com.theokanning.openai.image.Image;
 import com.theokanning.openai.image.*;
+import com.theokanning.openai.moderation.ModerationRequest;
+import com.theokanning.openai.moderation.ModerationResult;
 import com.theokanning.openai.service.OpenAiService;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
@@ -1094,19 +1096,19 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     /**
-     * list fine tunes
+     * list fine-tunes
      *
-     * @param request request
+     * @param fineTuneRequest fineTuneRequest
      * @return fineTunes
      */
-    public FineTuneResult createFineTune(FineTuneRequest request) {
+    public FineTuneResult createFineTune(FineTuneRequest fineTuneRequest) {
         FineTuneResult fineTuneResult = new FineTuneResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 if (i > 0) {
                     randomSleep();
                 }
-                fineTuneResult = super.createFineTune(request);
+                fineTuneResult = super.createFineTune(fineTuneRequest);
                 break;
             } catch (Exception e) {
                 LOG.error("create fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -1119,14 +1121,20 @@ public class OpenAiProxyService extends OpenAiService {
         return fineTuneResult;
     }
 
-    public CompletionResult createFineTuneCompletion(CompletionRequest request) {
+    /**
+     * createFineTuneCompletion
+     *
+     * @param completionRequest completionRequest
+     * @return completionResult
+     */
+    public CompletionResult createFineTuneCompletion(CompletionRequest completionRequest) {
         CompletionResult completionResult = new CompletionResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
             try {
                 if (i > 0) {
                     randomSleep();
                 }
-                completionResult = super.createFineTuneCompletion(request);
+                completionResult = super.createFineTuneCompletion(completionRequest);
                 break;
             } catch (Exception e) {
                 LOG.error("create fine tune completion failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -1139,6 +1147,11 @@ public class OpenAiProxyService extends OpenAiService {
         return completionResult;
     }
 
+    /**
+     * list fine-tunes
+     *
+     * @return fineTunes
+     */
     public List<FineTuneResult> listFineTunes() {
         List<FineTuneResult> fineTunes = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1159,6 +1172,12 @@ public class OpenAiProxyService extends OpenAiService {
         return fineTunes;
     }
 
+    /**
+     * retrieve fine-tune
+     *
+     * @param fineTuneId fineTuneId
+     * @return fineTune
+     */
     public FineTuneResult retrieveFineTune(String fineTuneId) {
         FineTuneResult fineTuneResult = new FineTuneResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1179,6 +1198,12 @@ public class OpenAiProxyService extends OpenAiService {
         return fineTuneResult;
     }
 
+    /**
+     * cancel fine-tune
+     *
+     * @param fineTuneId fineTuneId
+     * @return fineTune
+     */
     public FineTuneResult cancelFineTune(String fineTuneId) {
         FineTuneResult fineTuneResult = new FineTuneResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1199,6 +1224,12 @@ public class OpenAiProxyService extends OpenAiService {
         return fineTuneResult;
     }
 
+    /**
+     * list fine-tune events
+     *
+     * @param fineTuneId fineTuneId
+     * @return fineTuneEvents
+     */
     public List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
         List<FineTuneEvent> fineTuneEvents = new ArrayList<>();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1219,6 +1250,12 @@ public class OpenAiProxyService extends OpenAiService {
         return fineTuneEvents;
     }
 
+    /**
+     * delete fine-tune
+     *
+     * @param fineTuneId fineTuneId
+     * @return deleteResult
+     */
     public DeleteResult deleteFineTune(String fineTuneId) {
         DeleteResult deleteResult = new DeleteResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1239,6 +1276,31 @@ public class OpenAiProxyService extends OpenAiService {
         return deleteResult;
     }
 
+    /**
+     * create moderation
+     *
+     * @param moderationRequest moderationRequest
+     * @return moderationResult
+     */
+    public ModerationResult createModeration(ModerationRequest moderationRequest) {
+        ModerationResult moderationResult = new ModerationResult();
+        for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
+            try {
+                if (i > 0) {
+                    randomSleep();
+                }
+                moderationResult = super.createModeration(moderationRequest);
+                break;
+            } catch (Exception e) {
+                LOG.error("create moderation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                if (i == chatGPTProperties.getRetries() - 1) {
+                    e.printStackTrace();
+                    throw new ChatGPTException(ChatGPTErrorEnum.CREATE_MODERATION_ERROR, e.getMessage());
+                }
+            }
+        }
+        return moderationResult;
+    }
 
     public void forceClearCache(String cacheName) {
         this.cache.invalidate(cacheName);
@@ -1307,6 +1369,5 @@ public class OpenAiProxyService extends OpenAiService {
             // Save New Image
             ImageIO.write(outputImage, "png", image);
         }
-
     }
 }
