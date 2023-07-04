@@ -25,6 +25,7 @@
         <guava.version>31.1-jre</guava.version>
         <fastjson2.version>2.0.29</fastjson2.version>
         <retrofit2.version>2.9.0</retrofit2.version>
+        <jsonschema.version>1.0.34</jsonschema.version>
     </properties>
 
     <dependencyManagement>
@@ -75,12 +76,11 @@
             <artifactId>converter-jackson</artifactId>
             <version>${retrofit2.version}</version>
         </dependency>
-<!--        <dependency>
+        <dependency>
             <groupId>com.kjetland</groupId>
             <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
-            <version>1.0.34</version>
-            <scope>runtime</scope>
-        </dependency>-->
+            <version>${jsonschema.version}</version>
+        </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
