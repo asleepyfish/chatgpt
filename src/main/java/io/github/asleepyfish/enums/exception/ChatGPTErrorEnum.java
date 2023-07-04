@@ -134,7 +134,12 @@ public enum ChatGPTErrorEnum {
     /**
      * CREATE_MODERATION_ERROR
      */
-    CREATE_MODERATION_ERROR("10025", "create moderation error, reason is %s.");
+    CREATE_MODERATION_ERROR("10025", "create moderation error, reason is %s."),
+
+    /**
+     * SSL_CONTEXT_INIT_ERROR
+     */
+    SSL_CONTEXT_INIT_ERROR("10026", "ssl context init error, reason is %s.");
 
 
     private final String errorCode;

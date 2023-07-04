@@ -50,6 +50,9 @@ import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
 
 import javax.imageio.ImageIO;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -62,6 +65,8 @@ import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.Charset;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -130,9 +135,38 @@ public class OpenAiProxyService extends OpenAiService {
         if (Strings.isNullOrEmpty(proxyHost)) {
             return OpenAiService.defaultClient(token, timeout);
         }
+        // Create a TrustManager that trusts all certificates
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+        };
+        SSLContext sslContext;
+        try {
+            // Create SSLContext and use custom TrustManager
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new SecureRandom());
+        } catch (Exception e) {
+            throw new ChatGPTException(ChatGPTErrorEnum.SSL_CONTEXT_INIT_ERROR, e.getMessage());
+        }
         // Create proxy object
         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        return OpenAiService.defaultClient(token, timeout).newBuilder().proxy(proxy).build();
+        return OpenAiService.defaultClient(token, timeout).newBuilder()
+                .proxy(proxy)
+                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0])
+                .hostnameVerifier((hostname, session) -> true)
+                .build();
     }
 
     /**
