@@ -7,7 +7,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.theokanning.openai.DeleteResult;
-import com.theokanning.openai.client.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.CompletionResult;
@@ -26,7 +25,7 @@ import com.theokanning.openai.image.Image;
 import com.theokanning.openai.image.*;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
-import com.theokanning.openai.service.OpenAiService;
+import io.github.asleepyfish.client.OpenAiApi;
 import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.entity.audio.TranscriptionRequest;
 import io.github.asleepyfish.entity.audio.TranslationRequest;
@@ -43,6 +42,7 @@ import io.github.asleepyfish.enums.image.ImageResponseFormatEnum;
 import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
+import io.github.asleepyfish.service.openai.OpenAiService;
 import lombok.NonNull;
 import okhttp3.*;
 import org.apache.commons.logging.Log;
@@ -84,8 +84,6 @@ public class OpenAiProxyService extends OpenAiService {
 
     private static final Log LOG = LogFactory.getLog(OpenAiProxyService.class);
 
-    private static final String BASE_URL = "https://api.openai.com";
-
     private static final Random RANDOM = new Random();
 
     private final ChatGPTProperties chatGPTProperties;
@@ -94,23 +92,37 @@ public class OpenAiProxyService extends OpenAiService {
 
     private Cache<String, LinkedList<ChatMessage>> cache;
 
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties) {
+        this(chatGPTProperties, Duration.ZERO);
+    }
+
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout) {
-        super(buildApi(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()),
-                defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()).dispatcher().executorService());
+        this(chatGPTProperties, timeout, baseUrl);
+    }
+
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, String baseUrl) {
+        this(chatGPTProperties, Duration.ZERO, baseUrl);
+    }
+
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout, String baseUrl) {
+        super(buildApi(chatGPTProperties.getToken(), timeout, baseUrl, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()), defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()).dispatcher().executorService(), baseUrl);
         this.chatGPTProperties = chatGPTProperties;
         this.cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
                 CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
         this.client = OpenAiProxyService.defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort());
     }
 
-    public OpenAiProxyService(ChatGPTProperties chatGPTProperties) {
-        this(chatGPTProperties, Duration.ZERO);
-    }
-
     public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
-        Retrofit retrofit = defaultRetrofit(client, mapper);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
+        return retrofit.create(OpenAiApi.class);
+    }
+
+    public static OpenAiApi buildApi(String token, Duration timeout, String baseUrl, String proxyHost, int proxyPort) {
+        ObjectMapper mapper = defaultObjectMapper();
+        OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
         return retrofit.create(OpenAiApi.class);
     }
 
@@ -123,22 +135,59 @@ public class OpenAiProxyService extends OpenAiService {
         return OpenAiService.defaultClient(token, timeout).newBuilder().proxy(proxy).build();
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param content content
+     */
     public void createStreamChatCompletion(String content) {
         createStreamChatCompletion(content, "DEFAULT USER", System.out);
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param content content
+     * @param os      os
+     */
     public void createStreamChatCompletion(String content, OutputStream os) {
         createStreamChatCompletion(content, "DEFAULT USER", os);
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param content content
+     * @param user    user
+     * @param os      os
+     */
     public void createStreamChatCompletion(String content, String user, OutputStream os) {
         createStreamChatCompletion(content, user, chatGPTProperties.getChatModel(), os);
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param content content
+     * @param user    user
+     * @param model   model
+     * @param os      os
+     */
     public void createStreamChatCompletion(String content, String user, String model, OutputStream os) {
         createStreamChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D, os);
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param role        role
+     * @param content     content
+     * @param user        user
+     * @param model       model
+     * @param temperature temperature
+     * @param topP        topP
+     * @param os          os
+     */
     public void createStreamChatCompletion(String role, String content, String user, String model, Double temperature, Double topP, OutputStream os) {
         createStreamChatCompletion(ChatCompletionRequest.builder()
                 .model(model)
@@ -150,6 +199,12 @@ public class OpenAiProxyService extends OpenAiService {
                 .build(), os);
     }
 
+    /**
+     * createStreamChatCompletion
+     *
+     * @param chatCompletionRequest chatCompletionRequest
+     * @param os                    os
+     */
     public void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest, OutputStream os) {
         chatCompletionRequest.setStream(true);
         chatCompletionRequest.setN(1);
@@ -217,18 +272,50 @@ public class OpenAiProxyService extends OpenAiService {
                 .collect(Collectors.joining())));
     }
 
+    /**
+     * chatCompletion
+     *
+     * @param content content
+     * @return List
+     */
     public List<String> chatCompletion(String content) {
         return chatCompletion(content, "DEFAULT USER");
     }
 
+    /**
+     * chatCompletion
+     *
+     * @param content content
+     * @param user    user
+     * @return List
+     */
     public List<String> chatCompletion(String content, String user) {
         return chatCompletion(content, user, chatGPTProperties.getChatModel());
     }
 
+    /**
+     * chatCompletion
+     *
+     * @param content content
+     * @param user    user
+     * @param model   model
+     * @return List
+     */
     public List<String> chatCompletion(String content, String user, String model) {
         return chatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D);
     }
 
+    /**
+     * chatCompletion
+     *
+     * @param role        role
+     * @param content     content
+     * @param user        user
+     * @param model       model
+     * @param temperature temperature
+     * @param topP        topP
+     * @return List
+     */
     public List<String> chatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
         return chatCompletion(ChatCompletionRequest.builder()
                 .model(model)
@@ -239,6 +326,12 @@ public class OpenAiProxyService extends OpenAiService {
                 .build());
     }
 
+    /**
+     * chatCompletion
+     *
+     * @param chatCompletionRequest chatCompletionRequest
+     * @return List
+     */
     public List<String> chatCompletion(ChatCompletionRequest chatCompletionRequest) {
         String user = chatCompletionRequest.getUser();
         LinkedList<ChatMessage> contextInfo = new LinkedList<>();
@@ -361,14 +454,35 @@ public class OpenAiProxyService extends OpenAiService {
         return results;
     }
 
+    /**
+     * createImages
+     *
+     * @param prompt prompt
+     * @return List
+     */
     public List<String> createImages(String prompt) {
         return createImages(prompt, "DEFAULT USER");
     }
 
+    /**
+     * createImages
+     *
+     * @param prompt prompt
+     * @param user   user
+     * @return List
+     */
     public List<String> createImages(String prompt, String user) {
         return createImages(prompt, user, ImageResponseFormatEnum.URL);
     }
 
+    /**
+     * createImages
+     *
+     * @param prompt         prompt
+     * @param user           user
+     * @param responseFormat responseFormat
+     * @return List
+     */
     public List<String> createImages(String prompt, String user, ImageResponseFormatEnum responseFormat) {
         ImageResult imageResult = createImages(CreateImageRequest.builder()
                 .prompt(prompt)
@@ -381,6 +495,12 @@ public class OpenAiProxyService extends OpenAiService {
                 image.getUrl() : image.getB64Json()).collect(Collectors.toList());
     }
 
+    /**
+     * createImages
+     *
+     * @param createImageRequest createImageRequest
+     * @return ImageResult
+     */
     public ImageResult createImages(CreateImageRequest createImageRequest) {
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -401,18 +521,46 @@ public class OpenAiProxyService extends OpenAiService {
         return imageResult;
     }
 
+    /**
+     * downloadImage
+     *
+     * @param prompt   prompt
+     * @param response response
+     */
     public void downloadImage(String prompt, HttpServletResponse response) {
         downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), response);
     }
 
+    /**
+     * downloadImage
+     *
+     * @param prompt   prompt
+     * @param n        n
+     * @param response response
+     */
     public void downloadImage(String prompt, Integer n, HttpServletResponse response) {
         downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), response);
     }
 
+    /**
+     * downloadImage
+     *
+     * @param prompt   prompt
+     * @param size     size
+     * @param response response
+     */
     public void downloadImage(String prompt, String size, HttpServletResponse response) {
         downloadImage(prompt, 1, size, response);
     }
 
+    /**
+     * downloadImage
+     *
+     * @param prompt   prompt
+     * @param n        size
+     * @param size     size
+     * @param response response
+     */
     public void downloadImage(String prompt, Integer n, String size, HttpServletResponse response) {
         downloadImage(CreateImageRequest.builder()
                 .prompt(prompt)
@@ -421,6 +569,12 @@ public class OpenAiProxyService extends OpenAiService {
                 .user("DEFAULT USER").build(), response);
     }
 
+    /**
+     * downloadImage
+     *
+     * @param createImageRequest createImageRequest
+     * @param response           response
+     */
     public void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {
         createImageRequest.setResponseFormat(ImageResponseFormatEnum.B64_JSON.getResponseFormat());
         if (!ImageResponseFormatEnum.B64_JSON.getResponseFormat().equals(createImageRequest.getResponseFormat())) {
@@ -487,7 +641,7 @@ public class OpenAiProxyService extends OpenAiService {
      * @return Unit: (USD)
      */
     public String billingUsage(String startDate, String endDate) {
-        HttpUrl.Builder urlBuildr = HttpUrl.parse(BASE_URL + "/v1/dashboard/billing/usage").newBuilder();
+        HttpUrl.Builder urlBuildr = HttpUrl.parse(baseUrl + "/v1/dashboard/billing/usage").newBuilder();
         urlBuildr.addQueryParameter("start_date", startDate);
         urlBuildr.addQueryParameter("end_date", endDate);
         String url = urlBuildr.build().toString();
@@ -543,7 +697,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public Subscription subscription() {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/v1/dashboard/billing/subscription")
+                .url(baseUrl + "/v1/dashboard/billing/subscription")
                 .build();
         Subscription subscription = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -716,7 +870,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(BASE_URL + "/v1/audio/transcriptions")
+                .url(baseUrl + "/v1/audio/transcriptions")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -789,7 +943,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(BASE_URL + "/v1/audio/translations")
+                .url(baseUrl + "/v1/audio/translations")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -871,7 +1025,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(BASE_URL + "/v1/images/edits")
+                .url(baseUrl + "/v1/images/edits")
                 .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -940,7 +1094,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(BASE_URL + "/v1/images/variations")
+                .url(baseUrl + "/v1/images/variations")
                 .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1074,7 +1228,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public String retrieveFileContent(@NonNull String fileId) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/v1/files/{" + fileId + "}/content")
+                .url(baseUrl + "/v1/files/{" + fileId + "}/content")
                 .build();
         String fileContent = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1302,22 +1456,49 @@ public class OpenAiProxyService extends OpenAiService {
         return moderationResult;
     }
 
+    /**
+     * force clear cache
+     *
+     * @param cacheName cacheName
+     */
     public void forceClearCache(String cacheName) {
         this.cache.invalidate(cacheName);
     }
 
+    /**
+     * retrieveCache
+     *
+     * @return cache
+     */
     public Cache<String, LinkedList<ChatMessage>> retrieveCache() {
         return this.cache;
     }
 
+    /**
+     * retrieveChatMessage
+     *
+     * @param key key
+     * @return chatMessage
+     */
     public LinkedList<ChatMessage> retrieveChatMessage(String key) {
         return this.cache.getIfPresent(key);
     }
 
+    /**
+     * setCache
+     *
+     * @param cache cache
+     */
     public void setCache(Cache<String, LinkedList<ChatMessage>> cache) {
         this.cache = cache;
     }
 
+    /**
+     * addCache
+     *
+     * @param key          key
+     * @param chatMessages chatMessages
+     */
     public void addCache(String key, LinkedList<ChatMessage> chatMessages) {
         this.cache.put(key, chatMessages);
     }

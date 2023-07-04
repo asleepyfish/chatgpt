@@ -59,22 +59,58 @@ public class OpenAiUtils {
         OpenAiUtils.openAiProxyService = openAiProxyService;
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param content content
+     */
     public static void createStreamChatCompletion(String content) {
         createStreamChatCompletion(content, "DEFAULT USER", System.out);
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param content content
+     * @param os      os
+     */
     public static void createStreamChatCompletion(String content, OutputStream os) {
         createStreamChatCompletion(content, "DEFAULT USER", os);
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param content content
+     * @param user    user
+     */
     public static void createStreamChatCompletion(String content, String user, OutputStream os) {
         openAiProxyService.createStreamChatCompletion(content, user, os);
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param content content
+     * @param user    user
+     * @param model   model
+     * @param os      os
+     */
     public static void createStreamChatCompletion(String content, String user, String model, OutputStream os) {
         createStreamChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D, os);
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param role        role
+     * @param content     content
+     * @param user        user
+     * @param model       model
+     * @param os          os
+     * @param temperature temperature
+     * @param topP        topP
+     */
     public static void createStreamChatCompletion(String role, String content, String user, String model, Double temperature, Double topP, OutputStream os) {
         createStreamChatCompletion(ChatCompletionRequest.builder()
                 .model(model)
@@ -86,22 +122,60 @@ public class OpenAiUtils {
                 .build(), os);
     }
 
+    /**
+     * create stream chat completion
+     *
+     * @param chatCompletionRequest chatCompletionRequest
+     * @param os                    os
+     */
     public static void createStreamChatCompletion(ChatCompletionRequest chatCompletionRequest, OutputStream os) {
         openAiProxyService.createStreamChatCompletion(chatCompletionRequest, os);
     }
 
+    /**
+     * create chat completion
+     *
+     * @param content content
+     * @return List<String>
+     */
     public static List<String> createChatCompletion(String content) {
         return createChatCompletion(content, "DEFAULT USER");
     }
 
+    /**
+     * create chat completion
+     *
+     * @param content content
+     * @param user    user
+     * @return List<String>
+     */
     public static List<String> createChatCompletion(String content, String user) {
         return openAiProxyService.chatCompletion(content, user);
     }
 
+    /**
+     * create chat completion
+     *
+     * @param content content
+     * @param user    user
+     * @param model   model
+     * @return List<String>
+     */
     public static List<String> createChatCompletion(String content, String user, String model) {
         return createChatCompletion(RoleEnum.USER.getRoleName(), content, user, model, 1.0D, 1.0D);
     }
 
+    /**
+     * create chat completion
+     *
+     * @param role        role
+     * @param content     content
+     * @param user        user
+     * @param model       model
+     * @param temperature temperature
+     * @param topP        topP
+     * @return List<String>
+     */
     public static List<String> createChatCompletion(String role, String content, String user, String model, Double temperature, Double topP) {
         return createChatCompletion(ChatCompletionRequest.builder()
                 .model(model)
@@ -112,6 +186,12 @@ public class OpenAiUtils {
                 .build());
     }
 
+    /**
+     * create chat completion
+     *
+     * @param chatCompletionRequest chatCompletionRequest
+     * @return List<String>
+     */
     public static List<String> createChatCompletion(ChatCompletionRequest chatCompletionRequest) {
         return openAiProxyService.chatCompletion(chatCompletionRequest);
     }
@@ -154,34 +234,89 @@ public class OpenAiUtils {
         return openAiProxyService.completion(completionRequest);
     }
 
+    /**
+     * create image
+     *
+     * @param prompt prompt
+     * @return List<String>
+     */
     public static List<String> createImage(String prompt) {
         return createImage(prompt, "DEFAULT USER");
     }
 
+    /**
+     * create image
+     *
+     * @param prompt prompt
+     * @param user   user
+     * @return List<String>
+     */
     public static List<String> createImage(String prompt, String user) {
         return openAiProxyService.createImages(prompt, user);
     }
 
+    /**
+     * create image
+     *
+     * @param prompt         prompt
+     * @param user           user
+     * @param responseFormat responseFormat
+     * @return List<String>
+     */
     public static List<String> createImages(String prompt, String user, ImageResponseFormatEnum responseFormat) {
         return openAiProxyService.createImages(prompt, user, responseFormat);
     }
 
+    /**
+     * create image
+     *
+     * @param createImageRequest createImageRequest
+     * @return List<String>
+     */
     public static ImageResult createImage(CreateImageRequest createImageRequest) {
         return openAiProxyService.createImages(createImageRequest);
     }
 
+    /**
+     * download image
+     *
+     * @param prompt   prompt
+     * @param response response
+     */
     public static void downloadImage(String prompt, HttpServletResponse response) {
         downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), response);
     }
 
+    /**
+     * download image
+     *
+     * @param prompt   prompt
+     * @param n        n
+     * @param response response
+     */
     public static void downloadImage(String prompt, Integer n, HttpServletResponse response) {
         downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), response);
     }
 
+    /**
+     * download image
+     *
+     * @param prompt   prompt
+     * @param size     size
+     * @param response response
+     */
     public static void downloadImage(String prompt, String size, HttpServletResponse response) {
         downloadImage(prompt, 1, size, response);
     }
 
+    /**
+     * download image
+     *
+     * @param prompt   prompt
+     * @param n        n
+     * @param size     size
+     * @param response response
+     */
     public static void downloadImage(String prompt, Integer n, String size, HttpServletResponse response) {
         downloadImage(CreateImageRequest.builder()
                 .prompt(prompt)
@@ -190,6 +325,12 @@ public class OpenAiUtils {
                 .user("DEFAULT USER").build(), response);
     }
 
+    /**
+     * download image
+     *
+     * @param createImageRequest createImageRequest
+     * @param response           response
+     */
     public static void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {
         openAiProxyService.downloadImage(createImageRequest, response);
     }
@@ -253,14 +394,39 @@ public class OpenAiUtils {
         return openAiProxyService.getModel(model);
     }
 
+    /**
+     * edit
+     *
+     * @param input       input
+     * @param instruction instruction
+     * @return results
+     */
     public static String edit(String input, String instruction) {
         return openAiProxyService.edit(input, instruction);
     }
 
+    /**
+     * edit
+     *
+     * @param input         input
+     * @param instruction   instruction
+     * @param editModelEnum editModelEnum
+     * @return results
+     */
     public static String edit(String input, String instruction, EditModelEnum editModelEnum) {
         return openAiProxyService.edit(input, instruction, editModelEnum);
     }
 
+    /**
+     * edit
+     *
+     * @param input         input
+     * @param instruction   instruction
+     * @param temperature   temperature
+     * @param topP          topP
+     * @param editModelEnum editModelEnum
+     * @return results
+     */
     public static String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
         return openAiProxyService.edit(input, instruction, temperature, topP, editModelEnum);
     }
@@ -545,22 +711,49 @@ public class OpenAiUtils {
         return openAiProxyService.createModeration(moderationRequest);
     }
 
+    /**
+     * force clear cache
+     *
+     * @param cacheName cacheName
+     */
     public static void forceClearCache(String cacheName) {
         openAiProxyService.forceClearCache(cacheName);
     }
 
+    /**
+     * retrieve cache
+     *
+     * @return cache
+     */
     public static Cache<String, LinkedList<ChatMessage>> retrieveCache() {
         return openAiProxyService.retrieveCache();
     }
 
+    /**
+     * retrieve chat message
+     *
+     * @param key key
+     * @return chat message
+     */
     public static LinkedList<ChatMessage> retrieveChatMessage(String key) {
         return openAiProxyService.retrieveChatMessage(key);
     }
 
+    /**
+     * set cache
+     *
+     * @param cache cache
+     */
     public static void setCache(Cache<String, LinkedList<ChatMessage>> cache) {
         openAiProxyService.setCache(cache);
     }
 
+    /**
+     * add cache
+     *
+     * @param key          key
+     * @param chatMessages chatMessages
+     */
     public static void addCache(String key, LinkedList<ChatMessage> chatMessages) {
         openAiProxyService.addCache(key, chatMessages);
     }

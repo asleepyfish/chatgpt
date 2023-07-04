@@ -24,6 +24,7 @@
         <jackson.version>2.13.4.2</jackson.version>
         <guava.version>31.1-jre</guava.version>
         <fastjson2.version>2.0.29</fastjson2.version>
+        <retrofit2.version>2.9.0</retrofit2.version>
     </properties>
 
     <dependencyManagement>
@@ -56,9 +57,30 @@
         </dependency>
         <dependency>
             <groupId>com.theokanning.openai-gpt3-java</groupId>
-            <artifactId>service</artifactId>
+            <artifactId>api</artifactId>
             <version>${openai.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>retrofit</artifactId>
+            <version>${retrofit2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>adapter-rxjava2</artifactId>
+            <version>${retrofit2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>converter-jackson</artifactId>
+            <version>${retrofit2.version}</version>
+        </dependency>
+<!--        <dependency>
+            <groupId>com.kjetland</groupId>
+            <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
+            <version>1.0.34</version>
+            <scope>runtime</scope>
+        </dependency>-->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -66,7 +88,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
