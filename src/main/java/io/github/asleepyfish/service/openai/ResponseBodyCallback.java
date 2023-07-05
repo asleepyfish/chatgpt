@@ -61,7 +61,7 @@ public class ResponseBodyCallback implements Callback<ResponseBody> {
                 if (line.startsWith("data:")) {
                     String data = line.substring(5).trim();
                     sse = new SSE(data);
-                } else if (line.equals("") && sse != null) {
+                } else if ("".equals(line) && sse != null) {
                     if (sse.isDone()) {
                         if (emitDone) {
                             emitter.onNext(sse);
