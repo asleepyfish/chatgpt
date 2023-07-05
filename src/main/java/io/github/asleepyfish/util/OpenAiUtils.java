@@ -270,6 +270,19 @@ public class OpenAiUtils {
     /**
      * create image
      *
+     * @param prompt         prompt
+     * @param user           user
+     * @param responseFormat responseFormat
+     * @param imageSizeEnum  imageSizeEnum
+     * @return List<String>
+     */
+    public static List<String> createImage(String prompt, String user, ImageResponseFormatEnum responseFormat, ImageSizeEnum imageSizeEnum) {
+        return openAiProxyService.createImages(prompt, user, responseFormat, imageSizeEnum);
+    }
+
+    /**
+     * create image
+     *
      * @param createImageRequest createImageRequest
      * @return List<String>
      */

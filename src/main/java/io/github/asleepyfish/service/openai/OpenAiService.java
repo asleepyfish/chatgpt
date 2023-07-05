@@ -32,6 +32,8 @@ import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
 import io.github.asleepyfish.client.OpenAiApi;
+import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
+import io.github.asleepyfish.exception.ChatGPTException;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -42,7 +44,12 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -407,11 +414,38 @@ public class OpenAiService {
     }
 
     public static OkHttpClient defaultClient(String token, Duration timeout) {
+        // Create a TrustManager that trusts all certificates
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+        };
+        SSLContext sslContext;
+        try {
+            // Create SSLContext and use custom TrustManager
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new SecureRandom());
+        } catch (Exception e) {
+            throw new ChatGPTException(ChatGPTErrorEnum.SSL_CONTEXT_INIT_ERROR, e.getMessage());
+        }
         return new OkHttpClient.Builder()
                 .addInterceptor(new AuthenticationInterceptor(token))
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .connectTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0])
+                .hostnameVerifier((hostname, session) -> true)
                 .build();
     }
 
