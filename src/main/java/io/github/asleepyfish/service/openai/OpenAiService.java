@@ -56,13 +56,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class OpenAiService {
 
-    protected static String baseUrl = "https://api.openai.com/";
+    protected static String baseURL = "https://api.openai.com/";
 
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
     private static final ObjectMapper mapper = defaultObjectMapper();
 
-    private final OpenAiApi api;
+    protected final OpenAiApi api;
 
     private final ExecutorService executorService;
 
@@ -84,7 +84,7 @@ public class OpenAiService {
     public OpenAiService(final String token, final Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
 
         this.api = retrofit.create(OpenAiApi.class);
         this.executorService = client.dispatcher().executorService();
@@ -120,7 +120,7 @@ public class OpenAiService {
     public OpenAiService(final OpenAiApi api, final ExecutorService executorService, final String baseUrl) {
         this.api = api;
         this.executorService = executorService;
-        OpenAiService.baseUrl = baseUrl;
+        OpenAiService.baseURL = baseUrl;
     }
 
     public List<Model> listModels() {
@@ -390,7 +390,7 @@ public class OpenAiService {
     public static OpenAiApi buildApi(String token, Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
 
         return retrofit.create(OpenAiApi.class);
     }
@@ -411,6 +411,7 @@ public class OpenAiService {
                 .addInterceptor(new AuthenticationInterceptor(token))
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                .connectTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .build();
     }
 

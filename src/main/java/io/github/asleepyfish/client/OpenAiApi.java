@@ -22,6 +22,8 @@ import com.theokanning.openai.image.ImageResult;
 import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
+import io.github.asleepyfish.entity.billing.BillingUsage;
+import io.github.asleepyfish.entity.billing.Subscription;
 import io.reactivex.Single;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -133,4 +135,16 @@ public interface OpenAiApi {
     @Deprecated
     @GET("/v1/engines/{engine_id}")
     Single<Engine> getEngine(@Path("engine_id") String engineId);
+
+    @GET("/v1/dashboard/billing/usage")
+    Single<BillingUsage> billingUsage(@Query("start_date") String startDate, @Query("end_date") String endDate);
+
+    @GET("/v1/dashboard/billing/subscription")
+    Single<Subscription> subscription();
+
+    @POST("/v1/audio/transcriptions")
+    Single<String> transcription(@Body RequestBody requestBody);
+
+    @POST("/v1/audio/translations")
+    Single<String> translation(@Body RequestBody requestBody);
 }

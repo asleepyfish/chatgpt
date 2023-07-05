@@ -1,6 +1,5 @@
 package io.github.asleepyfish.service;
 
-import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
@@ -50,6 +49,7 @@ import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
 
 import javax.imageio.ImageIO;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -102,7 +102,7 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout) {
-        this(chatGPTProperties, timeout, baseUrl);
+        this(chatGPTProperties, timeout, baseURL);
     }
 
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, String baseUrl) {
@@ -120,7 +120,7 @@ public class OpenAiProxyService extends OpenAiService {
     public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
         return retrofit.create(OpenAiApi.class);
     }
 
@@ -674,23 +674,14 @@ public class OpenAiProxyService extends OpenAiService {
      * @param endDate   endDate  (yyyy-MM-dd)
      * @return Unit: (USD)
      */
-    public String billingUsage(String startDate, String endDate) {
-        HttpUrl.Builder urlBuildr = HttpUrl.parse(baseUrl + "/v1/dashboard/billing/usage").newBuilder();
-        urlBuildr.addQueryParameter("start_date", startDate);
-        urlBuildr.addQueryParameter("end_date", endDate);
-        String url = urlBuildr.build().toString();
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+    public String billingUsage(@NonNull String startDate, @NonNull String endDate) {
         String billingUsage = "0";
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try (Response response = client.newCall(request).execute()) {
+            try {
                 if (i > 0) {
                     randomSleep();
                 }
-                String resStr = response.body().string();
-                JSONObject resJson = JSONObject.parseObject(resStr);
-                String cents = resJson.get("total_usage").toString();
+                String cents = execute(api.billingUsage(startDate, endDate)).getTotalUsage();
                 billingUsage = new BigDecimal(cents).divide(new BigDecimal("100")).toPlainString();
                 break;
             } catch (Exception e) {
@@ -730,17 +721,13 @@ public class OpenAiProxyService extends OpenAiService {
      * @return subscription information
      */
     public Subscription subscription() {
-        Request request = new Request.Builder()
-                .url(baseUrl + "/v1/dashboard/billing/subscription")
-                .build();
         Subscription subscription = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try (Response response = client.newCall(request).execute()) {
+            try {
                 if (i > 0) {
                     randomSleep();
                 }
-                String resStr = response.body().string();
-                subscription = JSONObject.parseObject(resStr, Subscription.class);
+                subscription = execute(api.subscription());
                 break;
             } catch (Exception e) {
                 LOG.error("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -753,14 +740,39 @@ public class OpenAiProxyService extends OpenAiService {
         return subscription;
     }
 
+    /**
+     * Edit
+     *
+     * @param input       input
+     * @param instruction instruction
+     * @return {@link String}
+     */
     public String edit(String input, String instruction) {
         return edit(input, instruction, EditModelEnum.TEXT_DAVINCI_EDIT_001);
     }
 
+    /**
+     * Edit
+     *
+     * @param input         input
+     * @param instruction   instruction
+     * @param editModelEnum editModelEnum
+     * @return {@link String}
+     */
     public String edit(String input, String instruction, EditModelEnum editModelEnum) {
         return edit(input, instruction, 1D, 1D, editModelEnum);
     }
 
+    /**
+     * Edit
+     *
+     * @param input         input
+     * @param instruction   instruction
+     * @param temperature   temperature
+     * @param topP          topP
+     * @param editModelEnum editModelEnum
+     * @return {@link String}
+     */
     public String edit(String input, String instruction, Double temperature, Double topP, EditModelEnum editModelEnum) {
         EditResult editResult = edit(EditRequest.builder()
                 .model(editModelEnum.getModelName())
@@ -904,7 +916,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseUrl + "/v1/audio/transcriptions")
+                .url(baseURL + "/v1/audio/transcriptions")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -977,7 +989,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseUrl + "/v1/audio/translations")
+                .url(baseURL + "/v1/audio/translations")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1055,20 +1067,14 @@ public class OpenAiProxyService extends OpenAiService {
         if (createImageEditRequest.getUser() != null) {
             builder.addFormDataPart("user", createImageEditRequest.getUser());
         }
-        RequestBody requestBody = builder.build();
 
-        Request request = new Request.Builder()
-                .post(requestBody)
-                .url(baseUrl + "/v1/images/edits")
-                .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try (Response response = client.newCall(request).execute()) {
+            try {
                 if (i > 0) {
                     randomSleep();
                 }
-                String res = response.body().string();
-                imageResult = JSONObject.parseObject(res, ImageResult.class);
+                imageResult = execute(api.createImageEdit(builder.build()));
                 break;
             } catch (Exception e) {
                 LOG.error("create image edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -1124,20 +1130,14 @@ public class OpenAiProxyService extends OpenAiService {
         if (createImageVariationRequest.getUser() != null) {
             builder.addFormDataPart("user", createImageVariationRequest.getUser());
         }
-        RequestBody requestBody = builder.build();
 
-        Request request = new Request.Builder()
-                .post(requestBody)
-                .url(baseUrl + "/v1/images/variations")
-                .build();
         ImageResult imageResult = new ImageResult();
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
-            try (Response response = client.newCall(request).execute()) {
+            try {
                 if (i > 0) {
                     randomSleep();
                 }
-                String res = response.body().string();
-                imageResult = JSONObject.parseObject(res, ImageResult.class);
+                imageResult = execute(api.createImageVariation(builder.build()));
                 break;
             } catch (Exception e) {
                 LOG.error("create image variation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
@@ -1262,7 +1262,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public String retrieveFileContent(@NonNull String fileId) {
         Request request = new Request.Builder()
-                .url(baseUrl + "/v1/files/{" + fileId + "}/content")
+                .url(baseURL + "/v1/files/{" + fileId + "}/content")
                 .build();
         String fileContent = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
