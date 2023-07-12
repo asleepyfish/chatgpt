@@ -56,4 +56,10 @@ public class ChatGPTProperties {
      * sessionExpirationTime
      */
     private Integer sessionExpirationTime;
+
+    /**
+     * baseUrl
+     */
+    @Builder.Default
+    private String baseUrl = "https://api.openai.com/";
 }

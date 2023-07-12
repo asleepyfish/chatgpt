@@ -96,15 +96,7 @@ public class OpenAiProxyService extends OpenAiService {
     }
 
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout) {
-        this(chatGPTProperties, timeout, baseURL);
-    }
-
-    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, String baseUrl) {
-        this(chatGPTProperties, Duration.ZERO, baseUrl);
-    }
-
-    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout, String baseUrl) {
-        super(buildApi(chatGPTProperties.getToken(), timeout, baseUrl, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()), defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()).dispatcher().executorService(), baseUrl);
+        super(buildApi(chatGPTProperties.getToken(), timeout, chatGPTProperties.getBaseUrl(), chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()), defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()).dispatcher().executorService(), chatGPTProperties.getBaseUrl());
         this.chatGPTProperties = chatGPTProperties;
         this.cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
                 CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
@@ -114,7 +106,7 @@ public class OpenAiProxyService extends OpenAiService {
     public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
         return retrofit.create(OpenAiApi.class);
     }
 
@@ -905,7 +897,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseURL + "/v1/audio/transcriptions")
+                .url(baseUrl + "/v1/audio/transcriptions")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -978,7 +970,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseURL + "/v1/audio/translations")
+                .url(baseUrl + "/v1/audio/translations")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1251,7 +1243,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public String retrieveFileContent(@NonNull String fileId) {
         Request request = new Request.Builder()
-                .url(baseURL + "/v1/files/{" + fileId + "}/content")
+                .url(baseUrl + "/v1/files/{" + fileId + "}/content")
                 .build();
         String fileContent = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {

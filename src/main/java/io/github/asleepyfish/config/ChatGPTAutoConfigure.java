@@ -7,8 +7,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Duration;
-
 /**
  * @Author: asleepyfish
  * @Date: 2023-02-07 23:48
@@ -22,7 +20,7 @@ public class ChatGPTAutoConfigure {
 
     @Bean
     public OpenAiProxyService openAiProxyService() {
-        return new OpenAiProxyService(properties, Duration.ZERO);
+        return new OpenAiProxyService(properties);
     }
 
     @Bean

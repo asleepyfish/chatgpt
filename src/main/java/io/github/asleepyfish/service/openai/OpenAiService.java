@@ -3,7 +3,7 @@ package io.github.asleepyfish.service.openai;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.theokanning.openai.DeleteResult;
 import com.theokanning.openai.OpenAiError;
@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OpenAiService {
 
-    protected static String baseURL = "https://api.openai.com/";
+    protected static String baseUrl = "https://api.openai.com/";
 
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
@@ -91,7 +91,7 @@ public class OpenAiService {
     public OpenAiService(final String token, final Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
 
         this.api = retrofit.create(OpenAiApi.class);
         this.executorService = client.dispatcher().executorService();
@@ -127,7 +127,7 @@ public class OpenAiService {
     public OpenAiService(final OpenAiApi api, final ExecutorService executorService, final String baseUrl) {
         this.api = api;
         this.executorService = executorService;
-        OpenAiService.baseURL = baseUrl;
+        OpenAiService.baseUrl = baseUrl;
     }
 
     public List<Model> listModels() {
@@ -397,7 +397,7 @@ public class OpenAiService {
     public static OpenAiApi buildApi(String token, Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseURL);
+        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
 
         return retrofit.create(OpenAiApi.class);
     }
@@ -406,7 +406,7 @@ public class OpenAiService {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         mapper.addMixIn(ChatFunction.class, ChatFunctionMixIn.class);
         mapper.addMixIn(ChatCompletionRequest.class, ChatCompletionRequestMixIn.class);
         mapper.addMixIn(ChatFunctionCall.class, ChatFunctionCallMixIn.class);
