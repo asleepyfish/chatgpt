@@ -897,7 +897,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseUrl + "/v1/audio/transcriptions")
+                .url(baseUrl + "v1/audio/transcriptions")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -970,7 +970,7 @@ public class OpenAiProxyService extends OpenAiService {
 
         Request request = new Request.Builder()
                 .post(requestBody)
-                .url(baseUrl + "/v1/audio/translations")
+                .url(baseUrl + "v1/audio/translations")
                 .build();
         String text = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -1243,7 +1243,7 @@ public class OpenAiProxyService extends OpenAiService {
      */
     public String retrieveFileContent(@NonNull String fileId) {
         Request request = new Request.Builder()
-                .url(baseUrl + "/v1/files/{" + fileId + "}/content")
+                .url(baseUrl + "v1/files/{" + fileId + "}/content")
                 .build();
         String fileContent = null;
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {

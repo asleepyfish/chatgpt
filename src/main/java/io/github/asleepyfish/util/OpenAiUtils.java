@@ -33,8 +33,6 @@ import io.github.asleepyfish.enums.image.ImageSizeEnum;
 import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.service.OpenAiProxyService;
 import lombok.NonNull;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -49,8 +47,6 @@ import java.util.List;
  * @Description: provide external call-related interfaces
  */
 public class OpenAiUtils {
-
-    private static final Log LOG = LogFactory.getLog(OpenAiUtils.class);
 
     private static OpenAiProxyService openAiProxyService;
 

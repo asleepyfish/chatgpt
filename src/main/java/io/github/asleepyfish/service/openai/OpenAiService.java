@@ -125,6 +125,9 @@ public class OpenAiService {
     }
 
     public OpenAiService(final OpenAiApi api, final ExecutorService executorService, final String baseUrl) {
+        if (!baseUrl.endsWith("/")) {
+            throw new ChatGPTException(ChatGPTErrorEnum.BASE_URL_MUST_END_WITH_SLASH, baseUrl);
+        }
         this.api = api;
         this.executorService = executorService;
         OpenAiService.baseUrl = baseUrl;

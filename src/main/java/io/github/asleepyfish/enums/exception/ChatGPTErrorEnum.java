@@ -139,7 +139,12 @@ public enum ChatGPTErrorEnum {
     /**
      * SSL_CONTEXT_INIT_ERROR
      */
-    SSL_CONTEXT_INIT_ERROR("10026", "ssl context init error, reason is %s.");
+    SSL_CONTEXT_INIT_ERROR("10026", "ssl context init error, reason is %s."),
+
+    /**
+     * base Url must end with /
+     */
+    BASE_URL_MUST_END_WITH_SLASH("10027", "baseUrl [%s] must end with /");
 
 
     private final String errorCode;
