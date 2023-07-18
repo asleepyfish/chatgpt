@@ -7,12 +7,9 @@
 [![English badge](https://img.shields.io/badge/%E8%8B%B1%E6%96%87-English-blue)](./README_en.md)
 [![简体中文 badge](https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-Simplified%20Chinese-blue)](./README.md)
 
-> 源码及更详细的介绍说明参见Git上的ReadME.md文档
-> [https://github.com/asleepyfish/chatgpt](https://github.com/asleepyfish/chatgpt)
+> 本文Demo(SpringBoot和Main方法Demo均包括)的Git地址：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
 
-> 本文Demo的Git地址：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
-
-> 流式输出结合Vue的Demo的Git地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
+> 流式输出结合Vue前端的Demo的Git地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
 
 ==2023-05-28更新==
 
@@ -58,13 +55,15 @@
 
 ```xml
 <dependency>
-    <groupId>io.github.asleepyfish</groupId>
-    <artifactId>chatgpt</artifactId>
-    <version>Latest Version</version>
+  <groupId>io.github.asleepyfish</groupId>
+  <artifactId>chatgpt</artifactId>
+  <version>Latest Version</version>
 </dependency>
 ```
 
 ## 1.2 配置application.yml文件
+
+**注意：** 如果需要和`SpringBoot`集成则需要配置`application.yml`，如果只需要Main方法调用，可参考第3节扩展部分。
 
 在`application.yml`文件中配置chatgpt相关参数（Optional为可选参数）
 
@@ -111,7 +110,7 @@ chatgpt:
 
 # 2 使用
 
-**注意：**下面的使用`OpenAiUtils`调用的方法均需要和`SpringBoot`集成，才可使用。使用第四节自定义`OpenAiProxyService`的方式调用方法，在Main方法中就可以使用！！！
+**注意：**下面的使用`OpenAiUtils`调用的方法均需要和`SpringBoot`集成，才可使用。使用第四节自定义`OpenAiProxyService`的方式调用方法，不需要和`SpringBoot`集成，在Main方法中就可以使用！！！
 
 ## 2.1 生成回答
 
@@ -395,6 +394,8 @@ public void billing() {
 
 由于部分原因，用户可以选择搭建好的代理服务作为baseUrl，而不需要使用官方的`https://api.openai.com/`。
 
+==这部分可以和第4节放在一起看==
+
 如果用户基于SpringBoot使用自定义baseUrl，可以参考下面的`application.yml`，配置chatgpt.base-url，如果不配置，则表示默认使用官方的`https://api.openai.com/`。
 
 ```yml
@@ -634,20 +635,17 @@ System.out.println("语音文件翻译成英文后的json文本是：" + openAiP
 下面是一个Demo用来展示使用方法。
 
 ```java
-@GetMapping("/customToken")
-public void customToken() {
-	ChatGPTProperties chatGPTProperties = new ChatGPTProperties();
-	chatGPTProperties.setToken("sk-002xxxxxxxxxxxxxxxxxxxxxxxxx");
-	chatGPTProperties.setProxyHost("127.0.0.1");
-	chatGPTProperties.setProxyPort(7890);
-	OpenAiProxyService openAiProxyService = new OpenAiProxyService(chatGPTProperties, Duration.ZERO);
-	// 直接使用new出来的openAiProxyService来调用方法，每个OpenAiProxyService都拥有自己的Token。
-	// 这样在一个SpringBoot项目中，就可以有多个Token，可以有更多的免费额度供使用了
-	openAiProxyService.createStreamChatCompletion("Java的三大特性是什么");
-}
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-002xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .proxyHost("127.0.0.1")// 代理ip
+    .proxyHost("7890")// 代理端口
+    .build();
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+// 直接使用new出来的openAiProxyService来调用方法，每个OpenAiProxyService都拥有自己的Token。
+// 这样在一个SpringBoot项目中，就可以有多个Token，可以有更多的免费额度供使用了
+openAiProxyService.createStreamChatCompletion("Java的三大特性是什么");
 ```
 
-在上述方法中，新new了一个`ChatGPTProperties`对象，并且set了`token`为`sk-002xxxxxxxxxxxxxxxxxxxxxxxxx`（这里不需要设置除了`token`、`proxyHost`和`proxyPort`以外的其他属性，因为`ChatGPTProperties`的其他属性拥有默认值，如果需要对其他属性做修改，可以自行设置。**注意：sessionExpirationTime没有默认值，表示会话没有过期时间，如果需要设置会话过期时间，请set该值。**）
+在上述方法中，新new了一个`ChatGPTProperties`对象，并且set了`token`为`sk-002xxxxxxxxxxxxxxxxxxxxxxxxx`（由于本地无法访问openAI服务，所以设置了代理的proxyHost和proxyPort，如果可以直连访问到OpenAI，这两个属性无需赋值。如果需要对其他属性做修改，可以自行设置。**注意：sessionExpirationTime没有默认值，表示会话没有过期时间，如果需要设置会话过期时间，请set该值。**）
 
 而在`application.yml`中设置的`token`为`sk-001xxxxxxxxxxxxxxxxxxxxxxxxx`，这个token是给全局唯一的`OpenAitils`用的，这样就可以通过`OpenAiProxyService`的构造方法new出来一个新的`OpenAiProxyService`实例，其中构造方法的第二个参数直接填`Duration.ZERO`就好，表示Http调用请求没有超时时间，后续版本更新中，我会新增一个只有一个入参的构造方法。
 
@@ -698,10 +696,10 @@ public void customToken() {
 ```java
 @PostMapping("/createImage")
 public List<String> createImage(String prompt) {
-    List<String> imageList = OpenAiUtils.createImage(prompt);
-    System.out.println(imageList);
-    return imageList;
-}
+        List<String> imageList = OpenAiUtils.createImage(prompt);
+        System.out.println(imageList);
+        return imageList;
+        }
 ```
 
 ![image-20230718115911134](http://img.alpacos.cn/image-20230718115911134.png)
@@ -718,10 +716,10 @@ public List<String> createImage(String prompt) {
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxxx")
-    .baseUrl("https://apps.ichati.cn/0a7699ac-bc73-4732-9263-55c1c01f56e3/") // 这里需要填自己的baseUrl
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-System.out.println(openAiProxyService.chatCompletion("Go写个Hello World程序"));
+        .baseUrl("https://apps.ichati.cn/0a7699ac-bc73-4732-9263-55c1c01f56e3/") // 这里需要填自己的baseUrl
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        System.out.println(openAiProxyService.chatCompletion("Go写个Hello World程序"));
 ```
 
 输入结果如下：
