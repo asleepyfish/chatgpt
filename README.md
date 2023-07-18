@@ -10,9 +10,9 @@
 > 源码及更详细的介绍说明参见Git上的ReadME.md文档
 > [https://github.com/asleepyfish/chatgpt](https://github.com/asleepyfish/chatgpt)
 
-> 本文结合SpringBoot的Demo地址：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
+> 本文Demo的Git地址：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
 
-> 流式输出结合Vue的Demo地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
+> 流式输出结合Vue的Demo的Git地址：[https://github.com/asleepyfish/chatgpt-vue](https://github.com/asleepyfish/chatgpt-vue)
 
 ==2023-05-28更新==
 
@@ -35,15 +35,16 @@
 - 1.2.0 增加`subscription`方法（查询订阅信息，包括订阅到期日和账号额度等信息，但是没有使用量情况，使用通过`billingUsage`方法查询使用量），增加`billing`方法，整合了`subscription`和`billingUsage`方法，出参包括订阅到期日、额度、使用量、余量等信息。增加对内部cache的多种操作，包括获取，赋值等操作。
 - 1.2.1 `billing`方法中出参`dueDate`取值逻辑修改，`ChatGPTProperties`类支持build链式创建对象。
 - 1.3.0 新增以下方法，每种方法均包含多种重载方法，具体使用请参考：[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)
-    - `listModels`、`getModel`
-    - `edit`
-    - `embeddings`
-    - `transcription`、`translation`
-    - `createImageEdit`、`createImageVariation`
-    - `listFiles`、`uploadFile`、`deleteFile`、`retrieveFile`、`retrieveFileContent`
-    - `createFineTune`、`createFineTuneCompletion`、`listFineTunes`、`retrieveFineTune`、`cancelFineTune`、`listFineTuneEvents`、`deleteFineTune`
-    - `createModeration`
+  - `listModels`、`getModel`
+  - `edit`
+  - `embeddings`
+  - `transcription`、`translation`
+  - `createImageEdit`、`createImageVariation`
+  - `listFiles`、`uploadFile`、`deleteFile`、`retrieveFile`、`retrieveFileContent`
+  - `createFineTune`、`createFineTuneCompletion`、`listFineTunes`、`retrieveFineTune`、`cancelFineTune`、`listFineTuneEvents`、`deleteFineTune`
+  - `createModeration`
 - 1.3.1 支持自定义baseUrl，默认为 `https://api.openai.com/` ，配置参数在`ChatGPTProperties`类中，可通过`application.yml`配置。
+- 1.3.2 修复自定义`baseUrl`后无法访问bug，自定义`baseUrl`必须以`/`结尾。新增自定义属于自己的`baseUrl`示例。
 
 
 # 1. 配置阶段
@@ -79,16 +80,20 @@
 | chat-model (Optional)              | 可填可不填，默认即gpt-3.5-turbo （ChatGPT当前最强模型，生成回答使用的就是这个模型） |
 | retries (Optional)                 | 指的是当chatgpt第一次请求回答失败时，重新请求的次数（增加该参数的原因是因为大量访问的原因，在某一个时刻，chatgpt服务将处于无法访问的情况，不填的默认值为5） |
 | session-expiration-time (Optional) | （单位（min））为这个会话在多久不访问后被销毁，这个值不填的时候，即表示所有问答处于同一个会话之下，相同user的会话永不销毁（增加请求消耗） |
-| base-url (Optional)                | 默认为https://api.openai.com/，可不填                        |
+| base-url (Optional)                | 默认为 `https://api.openai.com/ `，可不填                    |
 
 例：
 
 ```yml
 chatgpt:
-  token: sk-xxxxxxxxxxxxxxx
-  proxy-host: 127.0.0.1
-  proxy-port: xxxx
-  session-expiration-time: 10
+  token: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx #必填
+#  proxy-host: 127.0.0.1 #需要代理时必填
+#  proxy-port: 7890 #需要代理时必填
+#  model: text-davinci-003 #可选
+#  chat-model: gpt-3.5-turbo #可选
+#  retries: 10 #可选，默认为5
+#  session-expiration-time: 30 #可选，不填则会话永不过期
+#  base-url: https://apps.ichati.cn/1d6f32f8-b59d-46f8-85e9-7d434bxxxxxx/ #可选，默认为https://api.openai.com/，请记住务必以/结尾
 ```
 
 **_其中token必填、大陆用户proxy-host、proxy-port也是必填的（某些你懂的原因）_**
@@ -105,6 +110,8 @@ chatgpt:
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2723c69669244b5da07c0752b0585945.png)
 
 # 2 使用
+
+**注意：**下面的使用`OpenAiUtils`调用的方法均需要和`SpringBoot`集成，才可使用。使用第四节自定义`OpenAiProxyService`的方式调用方法，在Main方法中就可以使用！！！
 
 ## 2.1 生成回答
 
@@ -647,3 +654,85 @@ public void customToken() {
 这样直接使用new出来的`openAiProxyService`来调用方法，每个`OpenAiProxyService`都拥有自己的Token。
 
 在一个SpringBoot项目中，就可以有多个`Token`，可以有更多的免费额度供使用了。
+
+# 4 自定义OpenAi服务端
+
+## 4.1 介绍
+
+默认使用OpenAi服务的`baseUrl`是 `https://api.openai.com/` ，众所周知的原因，很多人网络无法直连。如果服务是部署在国外服务器，或者拥有代理，配置`proxy-host`和`proxy-port`依旧可以直接访问 `https://api.openai.com/` ，这个也是比较推荐的方式，毕竟这是直连openai的服务，最安全，提供的服务接口也最全。
+
+但是很多人没用国外的服务器，也没有自己的代理，在这里提供一种解决方法，通过使用这种方法，来实现无需国外服务器，也无需代理即可访问OpenAi服务。
+
+在这里先简单介绍一下`反向代理`的概念。
+
+反向代理是一种用于隐藏服务端真实地址的技术。比如说真实地址是B，但是我们不希望用户直连B，让B的地址暴露，我们就可以使用反向代理，让A的请求转发到B。
+
+在这里，我们可以将B理解成 `https://api.openai.com/` ，由于我们不能直连 `https://api.openai.com/` ，但是我们可以在一台可以直连 `https://api.openai.com/` 的服务器上反向代理，给我们暴露一个网址A，我们将`baseUrl`设置为A，向A发送请求，服务器接受到后自动将请求转发到 `https://api.openai.com/` ，并且将结果返回。这样的话，我们只需要指定`baseUrl`，都不需要设置代理`proxy-host`和`proxy-port`即可访问OpenAi的服务了。那现在的问题就是怎么简单的获取到这样的一个`baseUrl`了。
+
+这里我找到了一个可以提供OpenAi代理的服务。访问[https://www.ichati.cn/dashboard/products/tools](https://www.ichati.cn/dashboard/products/tools)，注册登录后选择`白泽`，点击立即使用。
+
+![image-20230718104126500](http://img.alpacos.cn/image-20230718104126500.png)
+
+然后输入API-Key，点击开始部署（这里我测试只需要长度保持一致，后面几位的api-key可以随便填）。
+
+![image-20230718104238571](http://img.alpacos.cn/image-20230718104238571.png)
+
+然后如下图所示生成了我们的`baseUrl`（注意，这里生成的网页最后没用斜杠/，使用服务的使用baseUrl需要在最后带/，例如 `https://apps.ichati.cn/0a7699ac-bc73-4732-9263-55c1c01f56e3/` ）。
+
+![image-20230718104412550](http://img.alpacos.cn/image-20230718104412550.png)
+
+## 4.2 测试
+
+在4.1节中已经生成了我们项目的`baseUrl`，且因为它给我们转发，我们可以任务，他的服务部署在一台可以直连 `https://api.openai.com/` 的服务器上，也就自然不需要设置`proxy-host`和`proxy-port`了。
+
+### 4.2.1 基于SpringBoot使用OpenAiUtils
+
+先设置`application.yml`，只需要设置`token`和`baseUrl`即可。
+
+![image-20230718111150784](http://img.alpacos.cn/image-20230718111150784.png)
+
+启动SpringBoot项目。
+
+使用Post工具调用下面的接口生成图片。
+
+```java
+@PostMapping("/createImage")
+public List<String> createImage(String prompt) {
+    List<String> imageList = OpenAiUtils.createImage(prompt);
+    System.out.println(imageList);
+    return imageList;
+}
+```
+
+![image-20230718115911134](http://img.alpacos.cn/image-20230718115911134.png)
+
+结果如下：
+
+![image-20230718115949339](http://img.alpacos.cn/image-20230718115949339.png)
+
+访问该链接，就可以得到一个生成的图片~
+
+### 4.2.2 基于Main方法使用OpenAiProxyService
+
+下面是使用Main方法进行调用的具体代码，只需要设置`token`和`baseUrl`即可。
+
+```java
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxxx")
+    .baseUrl("https://apps.ichati.cn/0a7699ac-bc73-4732-9263-55c1c01f56e3/") // 这里需要填自己的baseUrl
+    .build();
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+System.out.println(openAiProxyService.chatCompletion("Go写个Hello World程序"));
+```
+
+输入结果如下：
+
+```go
+[package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}]
+```
+
