@@ -148,8 +148,8 @@ public static List<String> createChatCompletion(ChatCompletionRequest chatComple
 ```java
 @PostMapping("/chatTest")
 public List<String> chatTest(String content) {
-    return OpenAiUtils.createChatCompletion(content, "testUser");
-}
+        return OpenAiUtils.createChatCompletion(content, "testUser");
+        }
 ```
 
 Post请求
@@ -198,9 +198,9 @@ public static List<String> createImage(CreateImageRequest createImageRequest) {.
 
 ```java
     @Test
-    public void testGenerateImg() {
+public void testGenerateImg() {
         OpenAiUtils.createImage("英短").forEach(System.out::println);
-    }
+        }
 ```
 
 结果
@@ -231,10 +231,10 @@ public static void downloadImage(CreateImageRequest createImageRequest, HttpServ
 ```java
 @RestController
 public class ChatGPTController {
-    @GetMapping("/downloadImage")
-    public void downloadImage(String prompt, HttpServletResponse response) {
-        OpenAiUtils.downloadImage(prompt, response);
-    }
+  @GetMapping("/downloadImage")
+  public void downloadImage(String prompt, HttpServletResponse response) {
+    OpenAiUtils.downloadImage(prompt, response);
+  }
 }
 ```
 
@@ -280,10 +280,10 @@ public static void createStreamChatCompletion(String content, OutputStream os) {
 ```java
 @GetMapping("/streamChat")
 public void streamChat(String content) {
-    // OpenAiUtils.createStreamChatCompletion(content, System.out);
-    // 下面的默认和上面这句代码一样，是输出结果到控制台
-    OpenAiUtils.createStreamChatCompletion(content);
-}
+        // OpenAiUtils.createStreamChatCompletion(content, System.out);
+        // 下面的默认和上面这句代码一样，是输出结果到控制台
+        OpenAiUtils.createStreamChatCompletion(content);
+        }
 ```
 
 然后使用Postman或者其他可以发送Get请求的工具发送请求。
@@ -303,11 +303,11 @@ public void streamChat(String content) {
 ```java
 @GetMapping("/streamChatWithWeb")
 public void streamChatWithWeb(String content, HttpServletResponse response) throws IOException {
-    // 需要指定response的ContentType为流式输出，且字符编码为UTF-8
-    response.setContentType("text/event-stream");
-    response.setCharacterEncoding("UTF-8");
-    OpenAiUtils.createStreamChatCompletion(content, response.getOutputStream());
-}
+        // 需要指定response的ContentType为流式输出，且字符编码为UTF-8
+        response.setContentType("text/event-stream");
+        response.setCharacterEncoding("UTF-8");
+        OpenAiUtils.createStreamChatCompletion(content, response.getOutputStream());
+        }
 ```
 
 测试结果过程的Gif图如下所示：
@@ -362,21 +362,21 @@ public Billing billing(String... startDate) {...}
 ```java
 @GetMapping("/billing")
 public void billing() {
-    String monthUsage = OpenAiUtils.billingUsage("2023-04-01", "2023-05-01");
-    log.info("四月使用：{}美元", monthUsage);
-    String totalUsage = OpenAiUtils.billingUsage();
-    log.info("一共使用：{}美元", totalUsage);
-    String stageUsage = OpenAiUtils.billingUsage("2023-01-31");
-    log.info("自从2023/01/31使用：{}美元", stageUsage);
-    Subscription subscription = OpenAiUtils.subscription();
-    log.info("订阅信息（包含到期日期，账户总额度等信息）：{}", subscription);
-    // dueDate为到期日，total为总额度，usage为使用量，balance为余额
-    Billing totalBilling = OpenAiUtils.billing();
-    log.info("历史账单信息：{}", totalBilling);
-    // 默认不传参的billing方法的使用量usage从2023-01-01开始，如果用户的账单使用早于该日期，可以传入开始日期startDate
-    Billing posibleStartBilling = OpenAiUtils.billing("2022-01-01");
-    log.info("可能的历史账单信息：{}", posibleStartBilling);
-}
+        String monthUsage = OpenAiUtils.billingUsage("2023-04-01", "2023-05-01");
+        log.info("四月使用：{}美元", monthUsage);
+        String totalUsage = OpenAiUtils.billingUsage();
+        log.info("一共使用：{}美元", totalUsage);
+        String stageUsage = OpenAiUtils.billingUsage("2023-01-31");
+        log.info("自从2023/01/31使用：{}美元", stageUsage);
+        Subscription subscription = OpenAiUtils.subscription();
+        log.info("订阅信息（包含到期日期，账户总额度等信息）：{}", subscription);
+        // dueDate为到期日，total为总额度，usage为使用量，balance为余额
+        Billing totalBilling = OpenAiUtils.billing();
+        log.info("历史账单信息：{}", totalBilling);
+        // 默认不传参的billing方法的使用量usage从2023-01-01开始，如果用户的账单使用早于该日期，可以传入开始日期startDate
+        Billing posibleStartBilling = OpenAiUtils.billing("2022-01-01");
+        log.info("可能的历史账单信息：{}", posibleStartBilling);
+        }
 ```
 
 测试结果如下：
@@ -415,24 +415,30 @@ chatgpt:
 ```java
 @PostMapping("/baseUrl")
 public void baseUrl() {
-    // 先在application.yml中配置chatgpt.base-url
-    System.out.println("models列表：" + OpenAiUtils.listModels());
-}
+        // 先在application.yml中配置chatgpt.base-url
+        System.out.println("models列表：" + OpenAiUtils.listModels());
+        }
 ```
 
-如果用户不想和Spring集成，则可以使用main方法调用的方式，如下所示：
+如果用户不想和Spring集成，则可以使用main方法调用的方式。
+
+**下面为了测试方便性，均以`main`方法做示例，结合SpringBoot使用`OpenAiUtils`调用的方法请参考github上的demo示例。**
+
+**在`main`方法中直接使用请参考第3节扩展部分`自定义OpenAiProxyService`。**
+
+如下所示：
 
 ```java
 public static void main(String[] args) {
-    ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
+        ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
         .proxyHost("127.0.0.1")
         .proxyPort(7890)
         // 自定义baseUrl，若不需要自定义baseUrl，下一行可以去掉
         .baseUrl("https://openai.api2d.net/")
         .build();
-    OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-    System.out.println("models列表：" + openAiProxyService.listModels());
-}
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        System.out.println("models列表：" + openAiProxyService.listModels());
+        }
 ```
 
 其中自定义了baseUrl为 `https://openai.api2d.net/` ，并调用了`listModels`方法。
@@ -455,13 +461,13 @@ Model getModel(String model) {...}
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
-    .proxyHost("127.0.0.1")
-    .proxyPort(7890)
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-System.out.println("models列表：" + openAiProxyService.listModels());
-System.out.println("=============================================");
-System.out.println("text-davinci-003信息：" + openAiProxyService.getModel("text-davinci-003"));
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        System.out.println("models列表：" + openAiProxyService.listModels());
+        System.out.println("=============================================");
+        System.out.println("text-davinci-003信息：" + openAiProxyService.getModel("text-davinci-003"));
 ```
 
 测试结果（截取如下）：
@@ -485,22 +491,22 @@ String edit(String input, String instruction) {...}
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
-    .proxyHost("127.0.0.1")
-    .proxyPort(7890)
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-String input = "What day of the wek is it?";
-String instruction = "Fix the spelling mistakes";
-System.out.println("编辑前：" + input);
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        String input = "What day of the wek is it?";
+        String instruction = "Fix the spelling mistakes";
+        System.out.println("编辑前：" + input);
 // 下面这句和openAiProxyService.edit(input, instruction, EditModelEnum.TEXT_DAVINCI_EDIT_001);是一样的，默认使用模型TEXT_DAVINCI_EDIT_001
-System.out.println("编辑后：" + openAiProxyService.edit(input, instruction));
-System.out.println("=============================================");
-input = "    public static void mian([String] args) {\n" +
-    "        system.in.println(\"hello world\");\n" +
-    "    }";
-instruction = "Fix the code mistakes";
-System.out.println("修正代码前：\n" + input);
-System.out.println("修正代码后：\n" + openAiProxyService.edit(input, instruction, EditModelEnum.CODE_DAVINCI_EDIT_001));
+        System.out.println("编辑后：" + openAiProxyService.edit(input, instruction));
+        System.out.println("=============================================");
+        input = "    public static void mian([String] args) {\n" +
+        "        system.in.println(\"hello world\");\n" +
+        "    }";
+        instruction = "Fix the code mistakes";
+        System.out.println("修正代码前：\n" + input);
+        System.out.println("修正代码后：\n" + openAiProxyService.edit(input, instruction, EditModelEnum.CODE_DAVINCI_EDIT_001));
 ```
 
 测试结果如下：
@@ -532,21 +538,21 @@ List<Double> embeddings(String text) {...}
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
-    .proxyHost("127.0.0.1")
-    .proxyPort(7890)
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
 // 单文本
-String text = "Once upon a time";
-System.out.println("文本：" + text);
-System.out.println("文本的嵌入向量：" + openAiProxyService.embeddings(text));
-System.out.println("=============================================");
+        String text = "Once upon a time";
+        System.out.println("文本：" + text);
+        System.out.println("文本的嵌入向量：" + openAiProxyService.embeddings(text));
+        System.out.println("=============================================");
 // 文本数组
-String[] texts = {"Once upon a time", "There was a princess"};
-System.out.println("文本数组：" + Arrays.toString(texts));
-EmbeddingRequest embeddingRequest = EmbeddingRequest.builder()
-    .model(EmbeddingModelEnum.TEXT_EMBEDDING_ADA_002.getModelName()).input(Arrays.asList(texts)).build();
-System.out.println("文本数组的嵌入向量：" + openAiProxyService.embeddings(embeddingRequest));
+        String[] texts = {"Once upon a time", "There was a princess"};
+        System.out.println("文本数组：" + Arrays.toString(texts));
+        EmbeddingRequest embeddingRequest = EmbeddingRequest.builder()
+        .model(EmbeddingModelEnum.TEXT_EMBEDDING_ADA_002.getModelName()).input(Arrays.asList(texts)).build();
+        System.out.println("文本数组的嵌入向量：" + openAiProxyService.embeddings(embeddingRequest));
 ```
 
 测试结果截取如下：
@@ -572,15 +578,15 @@ String transcription(String filePath, AudioResponseFormatEnum audioResponseForma
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
-    .proxyHost("127.0.0.1")
-    .proxyPort(7890)
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-String filePath = "src/main/resources/audio/想象之中-许嵩.mp3";
-System.out.println("语音文件转录后的json文本是：" + openAiProxyService.transcription(filePath, AudioResponseFormatEnum.JSON));
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        String filePath = "src/main/resources/audio/想象之中-许嵩.mp3";
+        System.out.println("语音文件转录后的json文本是：" + openAiProxyService.transcription(filePath, AudioResponseFormatEnum.JSON));
 // File file = new File("src/main/resources/audio/想象之中-许嵩.mp3");
 // System.out.println("语音文件转录后的json文本是：" + openAiProxyService.transcription(file, AudioResponseFormatEnum.JSON));
-    
+
 ```
 
 测试结果截取如下：
@@ -605,15 +611,15 @@ String translation(String filePath, AudioResponseFormatEnum audioResponseFormatE
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
-    .proxyHost("127.0.0.1")
-    .proxyPort(7890)
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
-String filePath = "src/main/resources/audio/想象之中-许嵩.mp3";
-System.out.println("语音文件翻译成英文后的json文本是：" + openAiProxyService.translation(filePath, AudioResponseFormatEnum.JSON));
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        String filePath = "src/main/resources/audio/想象之中-许嵩.mp3";
+        System.out.println("语音文件翻译成英文后的json文本是：" + openAiProxyService.translation(filePath, AudioResponseFormatEnum.JSON));
 // File file = new File("src/main/resources/audio/想象之中-许嵩.mp3");
 // System.out.println("语音文件翻译成英文后的json文本是：" + openAiProxyService.translation(file, AudioResponseFormatEnum.JSON));
-    
+
 ```
 
 测试结果截取如下：
@@ -636,13 +642,13 @@ System.out.println("语音文件翻译成英文后的json文本是：" + openAiP
 
 ```java
 ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-002xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-    .proxyHost("127.0.0.1")// 代理ip
-    .proxyHost("7890")// 代理端口
-    .build();
-OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+        .proxyHost("127.0.0.1")// 代理ip
+        .proxyHost("7890")// 代理端口
+        .build();
+        OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
 // 直接使用new出来的openAiProxyService来调用方法，每个OpenAiProxyService都拥有自己的Token。
 // 这样在一个SpringBoot项目中，就可以有多个Token，可以有更多的免费额度供使用了
-openAiProxyService.createStreamChatCompletion("Java的三大特性是什么");
+        openAiProxyService.createStreamChatCompletion("Java的三大特性是什么");
 ```
 
 在上述方法中，新new了一个`ChatGPTProperties`对象，并且set了`token`为`sk-002xxxxxxxxxxxxxxxxxxxxxxxxx`（由于本地无法访问openAI服务，所以设置了代理的proxyHost和proxyPort，如果可以直连访问到OpenAI，这两个属性无需赋值。如果需要对其他属性做修改，可以自行设置。**注意：sessionExpirationTime没有默认值，表示会话没有过期时间，如果需要设置会话过期时间，请set该值。**）
