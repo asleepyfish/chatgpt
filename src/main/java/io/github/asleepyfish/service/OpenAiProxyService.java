@@ -627,6 +627,7 @@ public class OpenAiProxyService extends OpenAiService {
      * @param startDate startDate (yyyy-MM-dd)
      * @return bill
      */
+    @Deprecated
     public String billingUsage(String... startDate) {
         String start = startDate.length == 0 ? "2023-01-01" : startDate[0];
         BigDecimal totalUsage = BigDecimal.ZERO;
@@ -655,6 +656,7 @@ public class OpenAiProxyService extends OpenAiService {
      * @param endDate   endDate  (yyyy-MM-dd)
      * @return Unit: (USD)
      */
+    @Deprecated
     public String billingUsage(@NonNull String startDate, @NonNull String endDate) {
         String billingUsage = "0";
         for (int i = 0; i < chatGPTProperties.getRetries(); i++) {
@@ -682,6 +684,7 @@ public class OpenAiProxyService extends OpenAiService {
      * @param startDate startDate
      * @return billing
      */
+    @Deprecated
     public Billing billing(String... startDate) {
         String start = startDate.length == 0 ? "2023-01-01" : startDate[0];
         Subscription subscription = subscription();
