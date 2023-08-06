@@ -95,35 +95,40 @@ public class OpenAiProxyService extends OpenAiService {
         this(chatGPTProperties, Duration.ZERO);
     }
 
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, OkHttpClient okHttpClient) {
+        this(chatGPTProperties, Duration.ZERO, okHttpClient);
+    }
+
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout) {
-        super(buildApi(chatGPTProperties.getToken(), timeout, chatGPTProperties.getBaseUrl(), chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()), defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort()).dispatcher().executorService(), chatGPTProperties.getBaseUrl());
+        super(buildApi(chatGPTProperties, timeout, null), defaultClient(chatGPTProperties, timeout).dispatcher().executorService(), chatGPTProperties.getBaseUrl());
         this.chatGPTProperties = chatGPTProperties;
         this.cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
                 CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
-        this.client = OpenAiProxyService.defaultClient(chatGPTProperties.getToken(), timeout, chatGPTProperties.getProxyHost(), chatGPTProperties.getProxyPort());
+        this.client = OpenAiProxyService.defaultClient(chatGPTProperties, timeout);
     }
 
-    public static OpenAiApi buildApi(String token, Duration timeout, String proxyHost, int proxyPort) {
+    public OpenAiProxyService(ChatGPTProperties chatGPTProperties, Duration timeout, OkHttpClient client) {
+        super(buildApi(chatGPTProperties, timeout, client), client.dispatcher().executorService(), chatGPTProperties.getBaseUrl());
+        this.chatGPTProperties = chatGPTProperties;
+        this.cache = chatGPTProperties.getSessionExpirationTime() == null ? CacheBuilder.newBuilder().build() :
+                CacheBuilder.newBuilder().expireAfterAccess(chatGPTProperties.getSessionExpirationTime(), TimeUnit.MINUTES).build();
+        this.client = client;
+    }
+
+    public static OpenAiApi buildApi(ChatGPTProperties properties, Duration timeout, OkHttpClient okHttpClient) {
         ObjectMapper mapper = defaultObjectMapper();
-        OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
+        OkHttpClient client = okHttpClient == null ? defaultClient(properties, timeout) : okHttpClient;
         Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
         return retrofit.create(OpenAiApi.class);
     }
 
-    public static OpenAiApi buildApi(String token, Duration timeout, String baseUrl, String proxyHost, int proxyPort) {
-        ObjectMapper mapper = defaultObjectMapper();
-        OkHttpClient client = defaultClient(token, timeout, proxyHost, proxyPort);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
-        return retrofit.create(OpenAiApi.class);
-    }
-
-    public static OkHttpClient defaultClient(String token, Duration timeout, String proxyHost, int proxyPort) {
-        if (Strings.isNullOrEmpty(proxyHost)) {
-            return OpenAiService.defaultClient(token, timeout);
+    public static OkHttpClient defaultClient(ChatGPTProperties properties, Duration timeout) {
+        if (Strings.isNullOrEmpty(properties.getProxyHost())) {
+            return OpenAiService.defaultClient(properties.getToken(), timeout);
         }
         // Create proxy object
-        Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyHost, proxyPort));
-        return OpenAiService.defaultClient(token, timeout).newBuilder()
+        Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(properties.getProxyHost(), properties.getProxyPort()));
+        return OpenAiService.defaultClient(properties.getToken(), timeout).newBuilder()
                 .proxy(proxy)
                 .build();
     }

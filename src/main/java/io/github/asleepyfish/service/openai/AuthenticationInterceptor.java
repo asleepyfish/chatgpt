@@ -16,7 +16,7 @@ public class AuthenticationInterceptor implements Interceptor {
 
     private final String token;
 
-    AuthenticationInterceptor(String token) {
+    public AuthenticationInterceptor(String token) {
         Objects.requireNonNull(token, "OpenAI token required");
         this.token = token;
     }

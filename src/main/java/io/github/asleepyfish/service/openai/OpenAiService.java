@@ -397,14 +397,6 @@ public class OpenAiService {
         this.executorService.shutdown();
     }
 
-    public static OpenAiApi buildApi(String token, Duration timeout) {
-        ObjectMapper mapper = defaultObjectMapper();
-        OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
-
-        return retrofit.create(OpenAiApi.class);
-    }
-
     public static ObjectMapper defaultObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

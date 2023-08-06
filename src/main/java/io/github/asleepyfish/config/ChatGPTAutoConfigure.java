@@ -2,11 +2,15 @@ package io.github.asleepyfish.config;
 
 import io.github.asleepyfish.service.OpenAiProxyService;
 import io.github.asleepyfish.util.OpenAiUtils;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
 
 /**
  * @Author: asleepyfish
@@ -21,8 +25,14 @@ public class ChatGPTAutoConfigure {
     private ChatGPTProperties properties;
 
     @Bean
-    public OpenAiProxyService openAiProxyService() {
-        return new OpenAiProxyService(properties);
+    @ConditionalOnMissingBean(OkHttpClient.class)
+    public OkHttpClient okHttpClient() {
+        return OpenAiProxyService.defaultClient(properties, Duration.ZERO);
+    }
+
+    @Bean
+    public OpenAiProxyService openAiProxyService(OkHttpClient okHttpClient) {
+        return new OpenAiProxyService(properties, okHttpClient);
     }
 
     @Bean
