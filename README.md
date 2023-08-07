@@ -42,6 +42,7 @@
   - `createModeration`
 - 1.3.1 支持自定义baseUrl，默认为 `https://api.openai.com/` ，配置参数在`ChatGPTProperties`类中，可通过`application.yml`配置。
 - 1.3.2 修复自定义`baseUrl`后无法访问bug，自定义`baseUrl`必须以`/`结尾。新增自定义属于自己的`baseUrl`示例。
+- 1.3.3 支持自定义`OkHttpClient`，解决`OkHttpClient`默认并发数无法指定问题，解决部分Proxy登录需要账号密码问题，详细介绍见2.12节。
 
 
 # 1. 配置阶段
@@ -626,6 +627,82 @@ ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
 
 ```txt
 语音文件翻译成英文后的json文本是：{"text":"Translated by Hua Chenyu English Subs In my imagination, there will be results Without keeping your promise In my imagination, this time I will love for a long time I have experienced the tenderness in your eyes After falling in love, you suddenly freeze But if two people are thrown to me to bear In my imagination, it's very different In my imagination, everything is different from the later I admit that I used to be so heartbroken You are not as long-lasting as I imagined Memories can't exchange your tenderness In the end, it's not lonely and lonely Why am I crying again? ..."}
+```
+
+## 2.12 自定义OkHttpClient
+
+**注意：如果没有个性化定义OkHttpClient的需求，请忽略本节，系统会有一个默认的OkHttpClient实现**
+
+由于部分用户有自定义`OkHttpClient`默认并发数和设置Proxy的账号密码的需求，为了同时解决这两个问题，做了自定义OkHttpClient的改造，具体使用方法可以分为结合SpringBoot使用和Main方法使用两种。
+
+### 2.12.1 基于SpringBoot指定OkHttpClient
+
+默认情况下不需要指定OkHttpClient，有一默认实现，如果想要修改OkHttpClient，满足个性化的需求，可以创建一个@Bean，系统会自动使用该Client实例。
+
+如下定义了一个`ClientConfiguration`类，指定了Client默认并发数，且指定了Proxy的账号密码：
+
+```java
+@Configuration
+public class ClientConfiguration {
+
+    @Resource
+    private ChatGPTProperties properties;
+
+    @Bean
+    public OkHttpClient okHttpClient() {
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.setMaxRequests(100);
+        dispatcher.setMaxRequestsPerHost(10);
+        return new OkHttpClient.Builder()
+                .addInterceptor(new AuthenticationInterceptor(properties.getToken()))
+                .connectionPool(new ConnectionPool(100, 10, TimeUnit.SECONDS))
+                .readTimeout(Duration.ZERO.toMillis(), TimeUnit.MILLISECONDS)
+                .connectTimeout(Duration.ZERO.toMillis(), TimeUnit.MILLISECONDS)
+                .hostnameVerifier((hostname, session) -> true)
+                .proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(properties.getProxyHost(), properties.getProxyPort())))
+                .proxyAuthenticator((route, response) -> {
+                    String credential = Credentials.basic("proxyUsername", "proxyPassword");
+                    return response.request().newBuilder()
+                            .header("Proxy-Authorization", credential)
+                            .build();
+                })
+                .dispatcher(dispatcher)
+                .build();
+    }
+}
+```
+
+### 2.12.2 基于Main方法指定OkHttpClient
+
+直接在创建`OpenAiProxyService`对象的时候指定`OkHttpClient`，代码如下：
+
+```java
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
+    .proxyHost("127.0.0.1")
+    .proxyPort(7890)
+    .build();
+Dispatcher dispatcher = new Dispatcher();
+dispatcher.setMaxRequests(100);
+dispatcher.setMaxRequestsPerHost(10);
+// 自定义okHttpClient
+OkHttpClient okHttpClient = new OkHttpClient.Builder()
+    .addInterceptor(new AuthenticationInterceptor(properties.getToken()))
+    .connectionPool(new ConnectionPool(100, 10, TimeUnit.SECONDS))
+    .readTimeout(Duration.ZERO.toMillis(), TimeUnit.MILLISECONDS)
+    .connectTimeout(Duration.ZERO.toMillis(), TimeUnit.MILLISECONDS)
+    .hostnameVerifier((hostname, session) -> true)
+    .proxy(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(properties.getProxyHost(), properties.getProxyPort())))
+    .proxyAuthenticator((route, response) -> {
+        String credential = Credentials.basic("proxyUsername", "proxyPassword");
+        return response.request().newBuilder()
+            .header("Proxy-Authorization", credential)
+            .build();
+    })
+    .dispatcher(dispatcher)
+    .build();
+// 下面的openAiProxyService使用自定义的okHttpClient
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties, okHttpClient);
+System.out.println("models列表：" + openAiProxyService.listModels());
 ```
 
 # 3. 扩展
