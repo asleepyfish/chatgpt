@@ -43,6 +43,7 @@
 - 1.3.1 支持自定义baseUrl，默认为 `https://api.openai.com/` ，配置参数在`ChatGPTProperties`类中，可通过`application.yml`配置。
 - 1.3.2 修复自定义`baseUrl`后无法访问bug，自定义`baseUrl`必须以`/`结尾。新增自定义属于自己的`baseUrl`示例。
 - 1.3.3 支持自定义`OkHttpClient`，解决`OkHttpClient`默认并发数无法指定问题，解决部分Proxy登录需要账号密码问题，详细介绍见2.12节。
+- 1.3.4 修复指定`baseUrl`后未切换`baseUrl`bug，`1.3.3`版本不建议使用。
 
 
 # 1. 配置阶段

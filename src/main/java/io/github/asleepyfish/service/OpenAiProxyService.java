@@ -118,7 +118,7 @@ public class OpenAiProxyService extends OpenAiService {
     public static OpenAiApi buildApi(ChatGPTProperties properties, Duration timeout, OkHttpClient okHttpClient) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = okHttpClient == null ? defaultClient(properties, timeout) : okHttpClient;
-        Retrofit retrofit = defaultRetrofit(client, mapper, baseUrl);
+        Retrofit retrofit = defaultRetrofit(client, mapper, properties.getBaseUrl());
         return retrofit.create(OpenAiApi.class);
     }
 
