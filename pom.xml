@@ -28,6 +28,7 @@
         <jsonschema.version>1.0.34</jsonschema.version>
         <jackson-databind.version>2.13.5</jackson-databind.version>
         <okhttp.version>4.9.3</okhttp.version>
+        <reactivestreams.version>1.0.3</reactivestreams.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,12 @@
             <groupId>com.theokanning.openai-gpt3-java</groupId>
             <artifactId>api</artifactId>
             <version>${openai.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-databind</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>
@@ -68,26 +75,65 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>kotlin-stdlib</artifactId>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>kotlin-stdlib-common</artifactId>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>
             <artifactId>adapter-rxjava2</artifactId>
             <version>${retrofit2.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>reactive-streams</artifactId>
+                    <groupId>org.reactivestreams</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <artifactId>reactive-streams</artifactId>
+            <groupId>org.reactivestreams</groupId>
+            <version>${reactivestreams.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.retrofit2</groupId>
             <artifactId>converter-jackson</artifactId>
             <version>${retrofit2.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-databind</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.kjetland</groupId>
             <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
             <version>${jsonschema.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-databind</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-databind.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-annotations</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
