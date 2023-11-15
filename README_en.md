@@ -43,5 +43,5 @@ OpenAiUtils.downloadImage(prompt, response);
 ```
 A common static method is also provided.
 ```java
-public static void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {...}
+public static void downloadImage(CreateImageRequest createImageRequest, OutputStream os) {...}
 ```

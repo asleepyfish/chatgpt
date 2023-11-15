@@ -44,6 +44,7 @@
 - 1.3.2 修复自定义`baseUrl`后无法访问bug，自定义`baseUrl`必须以`/`结尾。新增自定义属于自己的`baseUrl`示例。
 - 1.3.3 支持自定义`OkHttpClient`，解决`OkHttpClient`默认并发数无法指定问题，解决部分Proxy登录需要账号密码问题，详细介绍见2.12节。
 - 1.3.4 修复指定`baseUrl`后未切换`baseUrl`bug，`1.3.3`版本不建议使用。
+- 1.3.5 支持SpringBoot3引用(SpringBoot3所需JDK最低是17)，代码Demo见[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)，分支为**dev-springboot3**
 
 
 # 1. 配置阶段
@@ -221,7 +222,7 @@ OpenAiUtils.downloadImage(prompt, response);
 通用方式如下：
 
 ```java
-public static void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {...}
+public static void downloadImage(CreateImageRequest createImageRequest, OutputStream os) {...}
 ```
 
 当`CreateImageRequest`对象中设置的返回参数`n`大于1时，会将图片打包成一个zip包返回，当`n`等于1时直接返回图片。
@@ -234,7 +235,7 @@ public static void downloadImage(CreateImageRequest createImageRequest, HttpServ
 @RestController
 public class ChatGPTController {
   @GetMapping("/downloadImage")
-  public void downloadImage(String prompt, HttpServletResponse response) {
+  public void downloadImage(String prompt, OutputStream os) {
     OpenAiUtils.downloadImage(prompt, response);
   }
 }

@@ -34,7 +34,6 @@ import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.service.OpenAiProxyService;
 import lombok.NonNull;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.Collections;
@@ -289,59 +288,59 @@ public class OpenAiUtils {
     /**
      * download image
      *
-     * @param prompt   prompt
-     * @param response response
+     * @param prompt prompt
+     * @param os     os
      */
-    public static void downloadImage(String prompt, HttpServletResponse response) {
-        downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), response);
+    public static void downloadImage(String prompt, OutputStream os) {
+        downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), os);
     }
 
     /**
      * download image
      *
-     * @param prompt   prompt
-     * @param n        n
-     * @param response response
+     * @param prompt prompt
+     * @param n      n
+     * @param os     os
      */
-    public static void downloadImage(String prompt, Integer n, HttpServletResponse response) {
-        downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), response);
+    public static void downloadImage(String prompt, Integer n, OutputStream os) {
+        downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), os);
     }
 
     /**
      * download image
      *
-     * @param prompt   prompt
-     * @param size     size
-     * @param response response
+     * @param prompt prompt
+     * @param size   size
+     * @param os     os
      */
-    public static void downloadImage(String prompt, String size, HttpServletResponse response) {
-        downloadImage(prompt, 1, size, response);
+    public static void downloadImage(String prompt, String size, OutputStream os) {
+        downloadImage(prompt, 1, size, os);
     }
 
     /**
      * download image
      *
-     * @param prompt   prompt
-     * @param n        n
-     * @param size     size
-     * @param response response
+     * @param prompt prompt
+     * @param n      n
+     * @param size   size
+     * @param os     os
      */
-    public static void downloadImage(String prompt, Integer n, String size, HttpServletResponse response) {
+    public static void downloadImage(String prompt, Integer n, String size, OutputStream os) {
         downloadImage(CreateImageRequest.builder()
                 .prompt(prompt)
                 .n(n)
                 .size(size)
-                .user("DEFAULT USER").build(), response);
+                .user("DEFAULT USER").build(), os);
     }
 
     /**
      * download image
      *
      * @param createImageRequest createImageRequest
-     * @param response           response
+     * @param os                 os
      */
-    public static void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {
-        openAiProxyService.downloadImage(createImageRequest, response);
+    public static void downloadImage(CreateImageRequest createImageRequest, OutputStream os) {
+        openAiProxyService.downloadImage(createImageRequest, os);
     }
 
     /**

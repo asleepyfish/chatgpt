@@ -49,7 +49,6 @@ import org.apache.commons.logging.LogFactory;
 import retrofit2.Retrofit;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ComponentColorModel;
@@ -544,73 +543,69 @@ public class OpenAiProxyService extends OpenAiService {
     /**
      * downloadImage
      *
-     * @param prompt   prompt
-     * @param response response
+     * @param prompt prompt
+     * @param os     os
      */
-    public void downloadImage(String prompt, HttpServletResponse response) {
-        downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), response);
+    public void downloadImage(String prompt, OutputStream os) {
+        downloadImage(prompt, ImageSizeEnum.S1024x1024.getSize(), os);
     }
 
     /**
      * downloadImage
      *
-     * @param prompt   prompt
-     * @param n        n
-     * @param response response
+     * @param prompt prompt
+     * @param n      n
+     * @param os     os
      */
-    public void downloadImage(String prompt, Integer n, HttpServletResponse response) {
-        downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), response);
+    public void downloadImage(String prompt, Integer n, OutputStream os) {
+        downloadImage(prompt, n, ImageSizeEnum.S1024x1024.getSize(), os);
     }
 
     /**
      * downloadImage
      *
-     * @param prompt   prompt
-     * @param size     size
-     * @param response response
+     * @param prompt prompt
+     * @param size   size
+     * @param os     os
      */
-    public void downloadImage(String prompt, String size, HttpServletResponse response) {
-        downloadImage(prompt, 1, size, response);
+    public void downloadImage(String prompt, String size, OutputStream os) {
+        downloadImage(prompt, 1, size, os);
     }
 
     /**
      * downloadImage
      *
-     * @param prompt   prompt
-     * @param n        size
-     * @param size     size
-     * @param response response
+     * @param prompt prompt
+     * @param n      size
+     * @param size   size
+     * @param os     os
      */
-    public void downloadImage(String prompt, Integer n, String size, HttpServletResponse response) {
+    public void downloadImage(String prompt, Integer n, String size, OutputStream os) {
         downloadImage(CreateImageRequest.builder()
                 .prompt(prompt)
                 .n(n)
                 .size(size)
-                .user("DEFAULT USER").build(), response);
+                .user("DEFAULT USER").build(), os);
     }
 
     /**
      * downloadImage
      *
      * @param createImageRequest createImageRequest
-     * @param response           response
+     * @param os                 os
      */
-    public void downloadImage(CreateImageRequest createImageRequest, HttpServletResponse response) {
+    public void downloadImage(CreateImageRequest createImageRequest, OutputStream os) {
         createImageRequest.setResponseFormat(ImageResponseFormatEnum.B64_JSON.getResponseFormat());
         if (!ImageResponseFormatEnum.B64_JSON.getResponseFormat().equals(createImageRequest.getResponseFormat())) {
             throw new ChatGPTException(ChatGPTErrorEnum.ERROR_RESPONSE_FORMAT);
         }
         List<String> imageList = createImages(createImageRequest).getData().stream()
                 .map(Image::getB64Json).collect(Collectors.toList());
-        try (OutputStream os = response.getOutputStream()) {
+        try {
             if (imageList.size() == 1) {
-                response.setContentType("image/png");
-                response.setHeader("Content-Disposition", "attachment; filename=generated.png");
                 BufferedImage bufferedImage = getImageFromBase64(imageList.get(0));
                 ImageIO.write(bufferedImage, "png", os);
             } else {
-                response.setContentType("application/zip");
-                response.setHeader("Content-Disposition", "attachment; filename=images.zip");
                 try (ZipOutputStream zipOut = new ZipOutputStream(os)) {
                     for (int i = 0; i < imageList.size(); i++) {
                         BufferedImage bufferedImage = getImageFromBase64(imageList.get(i));
