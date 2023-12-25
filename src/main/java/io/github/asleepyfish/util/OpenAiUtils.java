@@ -765,4 +765,29 @@ public class OpenAiUtils {
     public static void addCache(String key, LinkedList<ChatMessage> chatMessages) {
         openAiProxyService.addCache(key, chatMessages);
     }
+
+    /**
+     * Set System Prompt
+     *
+     * @param systemPrompt systemPrompt
+     */
+    public static void setSystemPrompt(String systemPrompt) {
+        openAiProxyService.setSystemPrompt(systemPrompt);
+    }
+
+    /**
+     * Get System Prompt
+     *
+     * @return systemPrompt
+     */
+    public static String getSystemPrompt() {
+        return openAiProxyService.getSystemPrompt();
+    }
+
+    /**
+     * clean up system prompt
+     */
+    public static void cleanUpSystemPrompt() {
+        openAiProxyService.cleanUpSystemPrompt();
+    }
 }

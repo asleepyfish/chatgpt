@@ -73,6 +73,8 @@ public class OpenAiService {
 
     private final ExecutorService executorService;
 
+    private String systemPrompt;
+
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
      *
@@ -484,5 +486,16 @@ public class OpenAiService {
         });
     }
 
+    public void setSystemPrompt(String systemPrompt) {
+        this.systemPrompt = systemPrompt;
+    }
+
+    public String getSystemPrompt() {
+        return this.systemPrompt;
+    }
+
+    public void cleanUpSystemPrompt() {
+        this.setSystemPrompt(null);
+    }
 }
 
