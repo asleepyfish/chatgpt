@@ -1,6 +1,8 @@
 package io.github.asleepyfish.util;
 
 import com.google.common.cache.Cache;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.ModelType;
 import com.theokanning.openai.DeleteResult;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.CompletionResult;
@@ -789,5 +791,36 @@ public class OpenAiUtils {
      */
     public static void cleanUpSystemPrompt() {
         openAiProxyService.cleanUpSystemPrompt();
+    }
+
+    /**
+     * 计数Token
+     *
+     * @param text 文本
+     * @return int
+     */
+    public static int countTokens(String text) {
+        return openAiProxyService.countTokens(text);
+    }
+
+    /**
+     * 计数Token
+     *
+     * @param text      文本
+     * @param modelType 型号类型
+     * @return int
+     */
+    public static int countTokens(String text, ModelType modelType) {
+        return openAiProxyService.countTokens(text, modelType);
+    }
+
+    /**
+     * 获取模型编码
+     *
+     * @param modelType 型号类型
+     * @return {@link Encoding}
+     */
+    public static Encoding getEncodingForModel(ModelType modelType) {
+        return openAiProxyService.getEncodingForModel(modelType);
     }
 }

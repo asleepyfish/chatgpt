@@ -28,6 +28,7 @@
         <jsonschema.version>1.0.34</jsonschema.version>
         <jackson-databind.version>2.13.5</jackson-databind.version>
         <okhttp.version>4.9.3</okhttp.version>
+        <jtokkit.version>0.6.1</jtokkit.version>
     </properties>
 
     <dependencies>
@@ -98,6 +99,11 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.knuddels</groupId>
+            <artifactId>jtokkit</artifactId>
+            <version>${jtokkit.version}</version>
         </dependency>
     </dependencies>
 

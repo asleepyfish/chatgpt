@@ -5,6 +5,10 @@ import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingRegistry;
+import com.knuddels.jtokkit.api.ModelType;
 import com.theokanning.openai.DeleteResult;
 import com.theokanning.openai.completion.CompletionChoice;
 import com.theokanning.openai.completion.CompletionRequest;
@@ -84,13 +88,15 @@ public class OpenAiProxyService extends OpenAiService {
 
     private static final Log LOG = LogFactory.getLog(OpenAiProxyService.class);
 
-    private static final Random RANDOM = new Random();
+    private final Random random = new Random();
 
     private final ChatGPTProperties chatGPTProperties;
 
     private final OkHttpClient client;
 
     private Cache<String, LinkedList<ChatMessage>> cache;
+
+    private static final EncodingRegistry REGISTRY = Encodings.newDefaultEncodingRegistry();
 
     public OpenAiProxyService(ChatGPTProperties chatGPTProperties) {
         this(chatGPTProperties, Duration.ZERO);
@@ -1536,6 +1542,12 @@ public class OpenAiProxyService extends OpenAiService {
         this.cache.put(key, chatMessages);
     }
 
+
+    /**
+     * 设置系统提示
+     *
+     * @param systemPrompt 系统提示
+     */
     public void setSystemPrompt(String systemPrompt) {
         super.setSystemPrompt(systemPrompt);
         ConcurrentMap<String, LinkedList<ChatMessage>> map = cache.asMap();
@@ -1549,10 +1561,18 @@ public class OpenAiProxyService extends OpenAiService {
         }
     }
 
+    /**
+     * 获取系统提示
+     *
+     * @return {@link String}
+     */
     public String getSystemPrompt() {
         return super.getSystemPrompt();
     }
 
+    /**
+     * 清理系统提示
+     */
     public void cleanUpSystemPrompt() {
         super.setSystemPrompt(null);
         ConcurrentMap<String, LinkedList<ChatMessage>> map = cache.asMap();
@@ -1568,8 +1588,39 @@ public class OpenAiProxyService extends OpenAiService {
         }
     }
 
+    /**
+     * 计数Token
+     *
+     * @param text 文本
+     * @return int
+     */
+    public int countTokens(String text) {
+        return countTokens(text, ModelType.GPT_3_5_TURBO);
+    }
+
+    /**
+     * 计数Token
+     *
+     * @param text      文本
+     * @param modelType 型号类型
+     * @return int
+     */
+    public int countTokens(String text, ModelType modelType) {
+        return getEncodingForModel(modelType).countTokens(text);
+    }
+
+    /**
+     * 获取模型编码
+     *
+     * @param modelType 型号类型
+     * @return {@link Encoding}
+     */
+    public Encoding getEncodingForModel(ModelType modelType) {
+        return REGISTRY.getEncodingForModel(modelType);
+    }
+
     private void randomSleep() throws InterruptedException {
-        Thread.sleep(500 + RANDOM.nextInt(200));
+        Thread.sleep(500 + random.nextInt(200));
     }
 
     private static boolean checkTokenUsage(String message) {

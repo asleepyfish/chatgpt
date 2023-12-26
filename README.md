@@ -45,6 +45,7 @@
 - 1.3.3 支持自定义`OkHttpClient`，解决`OkHttpClient`默认并发数无法指定问题，解决部分Proxy登录需要账号密码问题，详细介绍见2.12节。
 - 1.3.4 修复指定`baseUrl`后未切换`baseUrl`bug，`1.3.3`版本不建议使用。
 - 1.3.5 支持SpringBoot3引用(SpringBoot3所需JDK最低是17)，代码Demo见[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)，分支为**dev-springboot3**
+- 1.3.6 ① 新增设置系统级别提示功能 ②新增计算输入prompt消耗token功能
 
 
 # 1. 配置阶段
@@ -706,6 +707,8 @@ OkHttpClient okHttpClient = new OkHttpClient.Builder()
 OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties, okHttpClient);
 System.out.println("models列表：" + openAiProxyService.listModels());
 ```
+
+## 2.13 设置系统级提示信息
 
 # 3. 扩展
 
