@@ -11,6 +11,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ChatGPTErrorEnum {
+
     /**
      * FAILED_TO_GENERATE_ANSWER
      */

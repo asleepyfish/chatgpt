@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.List;
+import java.util.function.Function;
+
 /**
  * @Author: asleepyfish
  * @Date: 2023-02-07 22:15
@@ -62,4 +65,6 @@ public class ChatGPTProperties {
      */
     @Builder.Default
     private String baseUrl = "https://api.openai.com/";
+
+    private Function<List<String>, String> tokenStrategy;
 }

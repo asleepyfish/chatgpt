@@ -1529,6 +1529,25 @@ public class OpenAiProxyService extends OpenAiService {
      * @param cache cache
      */
     public void setCache(Cache<String, LinkedList<ChatMessage>> cache) {
+        String systemPrompt = getSystemPrompt();
+        if (Strings.isNullOrEmpty(getSystemPrompt())) {
+            this.cache = cache;
+            return;
+        }
+        ConcurrentMap<String, LinkedList<ChatMessage>> map = cache.asMap();
+        for (LinkedList<ChatMessage> chatMessages : map.values()) {
+            boolean findSystemFlag = false;
+            for (ChatMessage chatMessage : chatMessages) {
+                if (chatMessage.getRole().equals(RoleEnum.SYSTEM.getRoleName())) {
+                    chatMessage.setContent(systemPrompt);
+                    findSystemFlag = true;
+                    break;
+                }
+            }
+            if (!findSystemFlag) {
+                chatMessages.addFirst(new ChatMessage(RoleEnum.SYSTEM.getRoleName(), systemPrompt));
+            }
+        }
         this.cache = cache;
     }
 
@@ -1539,6 +1558,21 @@ public class OpenAiProxyService extends OpenAiService {
      * @param chatMessages chatMessages
      */
     public void addCache(String key, LinkedList<ChatMessage> chatMessages) {
+        if (Strings.isNullOrEmpty(getSystemPrompt())) {
+            this.cache.put(key, chatMessages);
+            return;
+        }
+        boolean findSystemFlag = false;
+        for (ChatMessage chatMessage : chatMessages) {
+            if (chatMessage.getRole().equals(RoleEnum.SYSTEM.getRoleName())) {
+                chatMessage.setContent(getSystemPrompt());
+                findSystemFlag = true;
+                break;
+            }
+        }
+        if (!findSystemFlag) {
+            chatMessages.addFirst(new ChatMessage(RoleEnum.SYSTEM.getRoleName(), getSystemPrompt()));
+        }
         this.cache.put(key, chatMessages);
     }
 

@@ -1,5 +1,6 @@
 package io.github.asleepyfish.service.openai;
 
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -12,6 +13,7 @@ import java.util.Objects;
  * @Date: 2023/7/4 14:24
  * @Description: OkHttp Interceptor that adds an authorization token header
  */
+@Slf4j
 public class AuthenticationInterceptor implements Interceptor {
 
     private final String token;
@@ -28,6 +30,12 @@ public class AuthenticationInterceptor implements Interceptor {
                 .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/json")
                 .build();
-        return chain.proceed(request);
+        Response response = chain.proceed(request);
+        if (!response.isSuccessful() && response.body() != null) {
+            String errorMsg = response.body().string();
+            log.error("OpenAI request error: {}", errorMsg);
+
+        }
+        return response;
     }
 }
