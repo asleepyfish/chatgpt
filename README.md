@@ -45,7 +45,10 @@
 - 1.3.3 支持自定义`OkHttpClient`，解决`OkHttpClient`默认并发数无法指定问题，解决部分Proxy登录需要账号密码问题，详细介绍见2.12节。
 - 1.3.4 修复指定`baseUrl`后未切换`baseUrl`bug，`1.3.3`版本不建议使用。
 - 1.3.5 支持SpringBoot3引用(SpringBoot3所需JDK最低是17)，代码Demo见[https://github.com/asleepyfish/chatgpt-demo](https://github.com/asleepyfish/chatgpt-demo)，分支为**dev-springboot3**
-- 1.3.6 ① 新增设置系统级别提示功能 ②新增计算输入prompt消耗token功能
+- 1.3.6  新增以下功能
+  - ① 新增设置系统级别提示功能
+  - ② 新增计算输入prompt消耗token功能
+  - ③ 新增备用token，可自定义每次请求使用token
 
 
 # 1. 配置阶段
@@ -73,17 +76,18 @@
 
 **注：大陆用户需要配置proxy-host和proxy-port来进行代理才能访问OpenAI服务**
 
-
-| 参数                               | 解释                                                         |
-| ---------------------------------- | ------------------------------------------------------------ |
-| token                              | 申请的API KEYS                                               |
-| proxy-host (Optional)              | 代理的ip                                                     |
-| proxy-port (Optional)              | 代理的端口                                                   |
-| model (Optional)                   | model可填可不填，默认即text-davinci-003                      |
-| chat-model (Optional)              | 可填可不填，默认即gpt-3.5-turbo （ChatGPT当前最强模型，生成回答使用的就是这个模型） |
+| 参数                                 | 解释                                                                                    |
+|------------------------------------|---------------------------------------------------------------------------------------|
+| token                              | 申请的API KEYS                                                                           |
+| proxy-host (Optional)              | 代理的ip                                                                                 |
+| proxy-port (Optional)              | 代理的端口                                                                                 |
+| model (Optional)                   | model可填可不填，默认即text-davinci-003                                                        |
+| chat-model (Optional)              | 可填可不填，默认即gpt-3.5-turbo （ChatGPT当前最强模型，生成回答使用的就是这个模型）                                  |
 | retries (Optional)                 | 指的是当chatgpt第一次请求回答失败时，重新请求的次数（增加该参数的原因是因为大量访问的原因，在某一个时刻，chatgpt服务将处于无法访问的情况，不填的默认值为5） |
-| session-expiration-time (Optional) | （单位（min））为这个会话在多久不访问后被销毁，这个值不填的时候，即表示所有问答处于同一个会话之下，相同user的会话永不销毁（增加请求消耗） |
-| base-url (Optional)                | 默认为 `https://api.openai.com/ `，可不填                    |
+| session-expiration-time (Optional) | （单位（min））为这个会话在多久不访问后被销毁，这个值不填的时候，即表示所有问答处于同一个会话之下，相同user的会话永不销毁（增加请求消耗）              |
+| base-url (Optional)                | 默认为 `https://api.openai.com/ `，可不填                                                    |
+| token-strategy-impl (Optional)     | 默认策略为`RandomTokenStrategy`，可不填                                                          |
+| alter-tokens (Optional)            | 备选token，可以和token-strategy-impl结合，每次请求按策略分配token，可不填                                   |
 
 例：
 
@@ -97,6 +101,10 @@ chatgpt:
 #  retries: 10 #可选，默认为5
 #  session-expiration-time: 30 #可选，不填则会话永不过期
 #  base-url: https://apps.ichati.cn/1d6f32f8-b59d-46f8-85e9-7d434bxxxxxx/ #可选，默认为https://api.openai.com/，请记住务必以/结尾
+#  token-strategy-impl: io.github.asleepyfish.strategy.DefaultTokenStrategy #可选，默认为RandomTokenStrategy（随机）
+#  alter-tokens: #可选，备选tokens，可以和token-strategy-impl结合，每次请求按策略分配token
+#    - sk-xxx2
+#    - sk-xxx3
 ```
 
 **_其中token必填、大陆用户proxy-host、proxy-port也是必填的（某些你懂的原因）_**
@@ -709,6 +717,89 @@ System.out.println("models列表：" + openAiProxyService.listModels());
 ```
 
 ## 2.13 设置系统级提示信息
+使用`main`方法的测试代码如下：
+```java
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
+        // 自定义baseUrl
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+System.out.println("初始系统级提示信息为：" + openAiProxyService.getSystemPrompt());
+openAiProxyService.setSystemPrompt("我是一个Java开发工程师，所有的代码请求都请用Java给我生成。");
+openAiProxyService.createStreamChatCompletion("写一个迭代器模式的代码");
+// System.out.println("当前的系统级信息提示为：" + openAiProxyService.getSystemPrompt());
+// 清理系统级提示信息
+// openAiProxyService.cleanUpSystemPrompt();
+// System.out.println("清理后的系统级提示信息为：" + openAiProxyService.getSystemPrompt());
+```
+结合`SpringBoot`的使用方法请参照demo中`ChatGPTController`类中方法`systemPrompt`。
+
+测试效果参考下面GIF图（结合SpringBoot实现带系统级提示的流式输出）：
+![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/de848642dfd3405c80ff7bab86521987.gif)
+
+## 2.14 计算输入prompt消耗token
+使用`main`方法的测试代码如下：
+```java
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx")
+        // 自定义baseUrl
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .build();
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+String text = "Hello World!";
+
+System.out.println("当前输入文字使用模型[gpt-3.5-turbo] token总数为：" + openAiProxyService.countTokens(text));
+ModelType modelType = ModelType.GPT_4_32K;
+// 实际上单就计算的token的数目上来说3.5和4是一样的
+System.out.println("当前输入文字使用模型[gpt-4-32k] token总数为：" + openAiProxyService.countTokens(text, modelType));
+```
+
+输出为：
+```txt
+当前输入文字使用模型[gpt-3.5-turbo] token总数为：3
+当前输入文字使用模型[gpt-4-32k] token总数为：3
+```
+
+## 2.15 自定义每次请求使用token
+**问题背景**：在之前的`SpringBoot`项目中只能指定一个`token`，当项目的使用人数增加的时候会出现一个问题，就是单`token`无法支持很多人同时请求，且使用完`token`的免费额度的时候，需要手动更换下一个`token`，很多时候如果不及时更换已经用完额度的`token`会造成服务无法访问的情况。
+**解决**：基于上述问题，现增加`alterTokens`参数，可以在原先token的基础上，支持在服务中定义更多的`token`（但是需要注意的是原先的`token`选项仍是必填选项，而`alterTokens`则是选填的）。同时增加`TokenStrategy`策略，来在众多`token`中选择使用某个`token`来完成一次请求。当某个`token`额度使用完或者过期时，会自动在服务中移除该`token`。
+
+`application.yml`配置如下：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/748027bd04f14c10ae00d8173fbe3bf7.png)
+如上图所示，`token`和`alter-tokens`加起来总共有3个token可以使用，而我们指定的`DefaultTokenStrategy`每次都会取第一个token使用，当第一个`token`额度用完，会自动删除，然后第二个token就变成第一个token了，继续使用。如果不指定`TokenStrategy`，则默认是`RandomTokenStrategy`，即随机选择token的策略，我推荐大家使用这种策略。当然，如果用户有更个性化的获取Token的策略，也可以通过实现`TokenStrategy`的方法指定获取token的策略。
+例如下面的策略，每次取token中第二个用：
+```java
+public class SelectSecondStrategy implements TokenStrategy {
+
+    @Override
+    public String getToken(List<String> tokens) {
+        if (!CollectionUtils.isEmpty(tokens) && tokens.size() > 1) {
+            return tokens.get(1);
+        }
+        throw new ChatGPTException(ChatGPTErrorEnum.NO_AVAILABLE_TOKEN_ERROR);
+    }
+}
+```
+使用main方法的测试代码：
+```java
+ChatGPTProperties properties = ChatGPTProperties.builder().token("sk-xxx1")
+        // 自定义baseUrl
+        .proxyHost("127.0.0.1")
+        .proxyPort(7890)
+        .alterTokens(Arrays.asList("sk-xxx2", "sk-xxx3"))
+        .tokenStrategyImpl(SelectSecondStrategy.class)
+        .build();
+OpenAiProxyService openAiProxyService = new OpenAiProxyService(properties);
+System.out.println("models列表：" + openAiProxyService.listModels());
+```
+因为指定获取token的策略为`SelectSecondStrategy`类，所以每次都选择第二个token，即`sk-xxx2`。
+
+输出结果如下：
+```txt
+models列表：[Model(id=text-search-babbage-doc-001, object=model, ownedBy=openai-dev, permission=null, root=null, parent=null), Model(id=curie-search-query, object=model, ownedBy=openai-dev, permission=null, root=null, parent=null), Model(id=text-davinci-003, object=model, ownedBy=openai-internal, permission=null, root=null, parent=null), Model(id=text-search-babbage-query-001, object=model, ownedBy=openai-dev, permission=null, root=null, parent=null),...
+```
 
 # 3. 扩展
 

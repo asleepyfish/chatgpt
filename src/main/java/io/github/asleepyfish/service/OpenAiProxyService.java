@@ -47,9 +47,8 @@ import io.github.asleepyfish.enums.model.ModelEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
 import io.github.asleepyfish.service.openai.OpenAiService;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.util.CollectionUtils;
 import retrofit2.Retrofit;
 
@@ -84,9 +83,8 @@ import java.util.zip.ZipOutputStream;
  * @Date: 2023/3/3 14:00
  * @Description: OpenAiProxyService
  */
+@Slf4j
 public class OpenAiProxyService extends OpenAiService {
-
-    private static final Log LOG = LogFactory.getLog(OpenAiProxyService.class);
 
     private final Random random = new Random();
 
@@ -131,11 +129,11 @@ public class OpenAiProxyService extends OpenAiService {
 
     public static OkHttpClient defaultClient(ChatGPTProperties properties, Duration timeout) {
         if (Strings.isNullOrEmpty(properties.getProxyHost())) {
-            return OpenAiService.defaultClient(properties.getToken(), timeout);
+            return OpenAiService.defaultClient(properties, timeout);
         }
         // Create proxy object
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(properties.getProxyHost(), properties.getProxyPort()));
-        return OpenAiService.defaultClient(properties.getToken(), timeout).newBuilder()
+        return OpenAiService.defaultClient(properties, timeout).newBuilder()
                 .proxy(proxy)
                 .build();
     }
@@ -260,7 +258,7 @@ public class OpenAiProxyService extends OpenAiService {
                     }
                     chatCompletionRequest.setMessages(cache.getIfPresent(user));
                 }
-                LOG.info("answer failed " + (i + 1) + " times, the error message is: " + message);
+                log.info("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     // when the call fails, remove the last item in the list
@@ -380,7 +378,7 @@ public class OpenAiProxyService extends OpenAiService {
                     }
                     chatCompletionRequest.setMessages(cache.getIfPresent(user));
                 }
-                LOG.info("answer failed " + (i + 1) + " times, the error message is: " + message);
+                log.info("answer failed " + (i + 1) + " times, the error message is: " + message);
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     // when the call fails, remove the last item in the list
@@ -454,7 +452,7 @@ public class OpenAiProxyService extends OpenAiService {
                 // if the last line code is correct, we can simply break the circle
                 break;
             } catch (Exception e) {
-                LOG.info("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("answer failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_ANSWER, e.getMessage());
@@ -551,7 +549,7 @@ public class OpenAiProxyService extends OpenAiService {
                 imageResult = super.createImage(createImageRequest);
                 break;
             } catch (Exception e) {
-                LOG.info("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("image generate failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.FAILED_TO_GENERATE_IMAGE, e.getMessage());
@@ -689,7 +687,7 @@ public class OpenAiProxyService extends OpenAiService {
                 billingUsage = new BigDecimal(cents).divide(new BigDecimal("100")).toPlainString();
                 break;
             } catch (Exception e) {
-                LOG.info("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.QUERY_BILLINGUSAGE_ERROR, e.getMessage());
@@ -735,7 +733,7 @@ public class OpenAiProxyService extends OpenAiService {
                 subscription = execute(api.subscription());
                 break;
             } catch (Exception e) {
-                LOG.info("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("query billingUsage failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.QUERY_BILLINGUSAGE_ERROR, e.getMessage());
@@ -807,7 +805,7 @@ public class OpenAiProxyService extends OpenAiService {
                 editResult = super.createEdit(editRequest);
                 break;
             } catch (Exception e) {
-                LOG.info("edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.EDIT_ERROR, e.getMessage());
@@ -856,7 +854,7 @@ public class OpenAiProxyService extends OpenAiService {
                 }
                 embeddingResult = super.createEmbeddings(embeddingRequest);
             } catch (Exception e) {
-                LOG.info("embeddings failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("embeddings failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.EMBEDDINGS_ERROR, e.getMessage());
@@ -932,7 +930,7 @@ public class OpenAiProxyService extends OpenAiService {
                 text = response.body().string();
                 break;
             } catch (Exception e) {
-                LOG.info("transcription failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("transcription failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.TRANSCRIPTION_ERROR, e.getMessage());
@@ -1005,7 +1003,7 @@ public class OpenAiProxyService extends OpenAiService {
                 text = response.body().string();
                 break;
             } catch (Exception e) {
-                LOG.info("translation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("translation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.TRANSLATION_ERROR, e.getMessage());
@@ -1047,7 +1045,7 @@ public class OpenAiProxyService extends OpenAiService {
                 convertColorFormats(mask);
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         // Create Request Body
@@ -1082,7 +1080,7 @@ public class OpenAiProxyService extends OpenAiService {
                 imageResult = execute(api.createImageEdit(builder.build()));
                 break;
             } catch (Exception e) {
-                LOG.info("create image edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("create image edit failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_EDIT_ERROR, e.getMessage());
@@ -1115,7 +1113,7 @@ public class OpenAiProxyService extends OpenAiService {
         try {
             convertColorFormats(image);
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
 
         // Create Request Body
@@ -1145,7 +1143,7 @@ public class OpenAiProxyService extends OpenAiService {
                 imageResult = execute(api.createImageVariation(builder.build()));
                 break;
             } catch (Exception e) {
-                LOG.info("create image variation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("create image variation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_IMAGE_VARIATION_ERROR, e.getMessage());
@@ -1170,7 +1168,7 @@ public class OpenAiProxyService extends OpenAiService {
                 files = super.listFiles();
                 break;
             } catch (Exception e) {
-                LOG.info("list files failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("list files failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.LIST_FILES_ERROR, e.getMessage());
@@ -1197,7 +1195,7 @@ public class OpenAiProxyService extends OpenAiService {
                 file = super.uploadFile(purpose, filepath);
                 break;
             } catch (Exception e) {
-                LOG.info("upload file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("upload file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.UPLOAD_FILE_ERROR, e.getMessage());
@@ -1223,7 +1221,7 @@ public class OpenAiProxyService extends OpenAiService {
                 deleteResult = super.deleteFile(fileId);
                 break;
             } catch (Exception e) {
-                LOG.info("delete file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("delete file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.DELETE_FILE_ERROR, e.getMessage());
@@ -1249,7 +1247,7 @@ public class OpenAiProxyService extends OpenAiService {
                 file = super.retrieveFile(fileId);
                 break;
             } catch (Exception e) {
-                LOG.info("retrieve file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("retrieve file failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FILE_ERROR, e.getMessage());
@@ -1278,7 +1276,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fileContent = response.body().string();
                 break;
             } catch (Exception e) {
-                LOG.info("retrieve file content failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("retrieve file content failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FILE_CONTENT_ERROR, e.getMessage());
@@ -1304,7 +1302,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fineTuneResult = super.createFineTune(fineTuneRequest);
                 break;
             } catch (Exception e) {
-                LOG.info("create fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("create fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_FINE_TUNE_ERROR, e.getMessage());
@@ -1330,7 +1328,7 @@ public class OpenAiProxyService extends OpenAiService {
                 completionResult = super.createFineTuneCompletion(completionRequest);
                 break;
             } catch (Exception e) {
-                LOG.info("create fine tune completion failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("create fine tune completion failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_FINE_TUNE_COMPLETION_ERROR, e.getMessage());
@@ -1355,7 +1353,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fineTunes = super.listFineTunes();
                 break;
             } catch (Exception e) {
-                LOG.info("list fine tunes failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("list fine tunes failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.LIST_FINE_TUNES_ERROR, e.getMessage());
@@ -1381,7 +1379,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fineTuneResult = super.retrieveFineTune(fineTuneId);
                 break;
             } catch (Exception e) {
-                LOG.info("retrieve fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("retrieve fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.RETRIEVE_FINE_TUNE_ERROR, e.getMessage());
@@ -1407,7 +1405,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fineTuneResult = super.cancelFineTune(fineTuneId);
                 break;
             } catch (Exception e) {
-                LOG.info("cancel fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("cancel fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CANCEL_FINE_TUNE_ERROR, e.getMessage());
@@ -1433,7 +1431,7 @@ public class OpenAiProxyService extends OpenAiService {
                 fineTuneEvents = super.listFineTuneEvents(fineTuneId);
                 break;
             } catch (Exception e) {
-                LOG.info("list fine tune events failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("list fine tune events failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.LIST_FINE_TUNE_EVENTS_ERROR, e.getMessage());
@@ -1459,7 +1457,7 @@ public class OpenAiProxyService extends OpenAiService {
                 deleteResult = super.deleteFineTune(fineTuneId);
                 break;
             } catch (Exception e) {
-                LOG.info("delete fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("delete fine tune failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.DELETE_FINE_TUNE_ERROR, e.getMessage());
@@ -1485,7 +1483,7 @@ public class OpenAiProxyService extends OpenAiService {
                 moderationResult = super.createModeration(moderationRequest);
                 break;
             } catch (Exception e) {
-                LOG.info("create moderation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
+                log.info("create moderation failed " + (i + 1) + " times, the error message is: " + e.getMessage());
                 if (i == chatGPTProperties.getRetries() - 1) {
                     e.printStackTrace();
                     throw new ChatGPTException(ChatGPTErrorEnum.CREATE_MODERATION_ERROR, e.getMessage());

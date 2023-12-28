@@ -145,9 +145,19 @@ public enum ChatGPTErrorEnum {
     /**
      * base Url must end with /
      */
-    BASE_URL_MUST_END_WITH_SLASH("10027", "baseUrl [%s] must end with /");
+    BASE_URL_MUST_END_WITH_SLASH("10027", "baseUrl [%s] must end with /"),
 
+    /**
+     * no available token, please check token configuration
+     */
+    NO_AVAILABLE_TOKEN_ERROR("10028", "no available token, please check token configuration"),
+
+    /**
+     * token is invalid, please check token configuration
+     */
+    TOKEN_IS_INVALID_ERROR("10029", "token is invalid, please check token configuration, reason is [%s].");
 
     private final String errorCode;
+
     private final String errorMessage;
 }

@@ -1,6 +1,7 @@
 package io.github.asleepyfish.config;
 
 import io.github.asleepyfish.enums.model.ModelEnum;
+import io.github.asleepyfish.strategy.TokenStrategy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +9,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * @Author: asleepyfish
@@ -66,5 +66,13 @@ public class ChatGPTProperties {
     @Builder.Default
     private String baseUrl = "https://api.openai.com/";
 
-    private Function<List<String>, String> tokenStrategy;
+    /**
+     * 替代tokens
+     */
+    private List<String> alterTokens;
+
+    /**
+     * tokenStrategyImpl
+     */
+    private Class<? extends TokenStrategy> tokenStrategyImpl;
 }

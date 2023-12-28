@@ -32,6 +32,7 @@ import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
 import io.github.asleepyfish.client.OpenAiApi;
+import io.github.asleepyfish.config.ChatGPTProperties;
 import io.github.asleepyfish.enums.exception.ChatGPTErrorEnum;
 import io.github.asleepyfish.exception.ChatGPTException;
 import io.reactivex.BackpressureStrategy;
@@ -80,6 +81,7 @@ public class OpenAiService {
      *
      * @param token OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      */
+    @Deprecated
     public OpenAiService(final String token) {
         this(token, DEFAULT_TIMEOUT);
     }
@@ -90,6 +92,7 @@ public class OpenAiService {
      * @param token   OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      * @param timeout http read timeout, Duration.ZERO means no timeout
      */
+    @Deprecated
     public OpenAiService(final String token, final Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
@@ -106,6 +109,7 @@ public class OpenAiService {
      *
      * @param api OpenAiApi instance to use for all methods
      */
+    @Deprecated
     public OpenAiService(final OpenAiApi api) {
         this.api = api;
         this.executorService = null;
@@ -121,12 +125,13 @@ public class OpenAiService {
      * @param api             OpenAiApi instance to use for all methods
      * @param executorService the ExecutorService from client.dispatcher().executorService()
      */
+    @Deprecated
     public OpenAiService(final OpenAiApi api, final ExecutorService executorService) {
         this.api = api;
         this.executorService = executorService;
     }
 
-    public OpenAiService(final OpenAiApi api, ExecutorService executorService, String baseUrl) {
+    public OpenAiService(OpenAiApi api, ExecutorService executorService, String baseUrl) {
         if (!baseUrl.endsWith("/")) {
             baseUrl += "/";
         }
@@ -410,7 +415,19 @@ public class OpenAiService {
         return mapper;
     }
 
+    public static OkHttpClient defaultClient(ChatGPTProperties properties, Duration timeout) {
+        return defaultClient(timeout)
+                .addInterceptor(new AuthenticationInterceptor(properties))
+                .build();
+    }
+
     public static OkHttpClient defaultClient(String token, Duration timeout) {
+        return defaultClient(timeout)
+                .addInterceptor(new AuthenticationInterceptor(token))
+                .build();
+    }
+
+    public static OkHttpClient.Builder defaultClient(Duration timeout) {
         // Create a TrustManager that trusts all certificates
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
@@ -437,14 +454,13 @@ public class OpenAiService {
             throw new ChatGPTException(ChatGPTErrorEnum.SSL_CONTEXT_INIT_ERROR, e.getMessage());
         }
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token))
                 .connectionPool(new ConnectionPool(5, 1, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .connectTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0])
-                .hostnameVerifier((hostname, session) -> true)
-                .build();
+                .hostnameVerifier((hostname, session) -> true);
     }
+
 
     public static Retrofit defaultRetrofit(OkHttpClient client, ObjectMapper mapper, String baseUrl) {
         return new Retrofit.Builder()
